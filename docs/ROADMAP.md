@@ -10,8 +10,8 @@ through save/load.
 | 2  | Player Controller    | ✅ Done      | First-person CharacterEntity, camera look, code-defined input, locomotion, melee |
 | 3  | Combat Framework     | ✅ Done      | Hitbox/hurtbox, damage pipeline (armor/crit), weapons, combos, stamina, stagger |
 | 4  | Enemy AI             | ✅ Done      | Perception FSM (idle/patrol/investigate/combat/retreat), coordination, spawner |
-| 5  | Inventory System     | ⏳ Next      | Item resources, stacks, container component                  |
-| 6  | Equipment System     | ⬜ Planned   | Slots, stat modifiers from gear                              |
+| 5  | Inventory System     | ✅ Done      | Item resources + database, stacking inventory, pickups, UI, save |
+| 6  | Equipment System     | ⏳ Next      | Slots, stat modifiers from gear                              |
 | 7  | Loot Generation      | ⬜ Planned   | Rarity tiers, procedural affixes, drop tables                |
 | 8  | Progression System   | ⬜ Planned   | XP, levels, skills, perks                                    |
 | 9  | Quest Framework      | ⬜ Planned   | Objectives, branching, consequences                         |
@@ -85,10 +85,21 @@ Core architecture foundation that everything else builds on:
   enemies despawn and are replaced.
 - Player can now be killed by enemies and respawns at the start.
 
-## Phase 5 — next steps (Inventory System)
+## Phase 5 — delivered (Inventory System)
 
-1. `ItemResource` (id, name, icon, stack size, type) — resource-driven.
-2. `InventoryComponent`: slots, stacking, add/remove/query, weight/capacity.
-3. Item pickups in the world (interactable entities) using the interact action.
-4. Inventory UI panel; save/load of inventory contents.
-5. Foundation for equipment (Phase 6) and loot (Phase 7).
+- `ItemResource` (`.tres`-driven: id, name, type, rarity, stack size, weight,
+  value) + `ItemDatabase` that indexes `data/items/` by id for save/loot lookup.
+- `ItemStack` runtime quantities; `InventoryComponent` (slot-based, stacking,
+  add/remove/count, weight tracking) implementing `ISaveable`.
+- `InteractableComponent` interaction base + raycast `interact` in the player
+  controller; `ItemPickupComponent`/`ItemPickupFactory` for world pickups.
+- `InventoryPanel` UI (toggle with `I`); goblins drop hide/gold on death.
+
+## Phase 6 — next steps (Equipment System)
+
+1. `EquipmentSlot` enum (MainHand, OffHand, Head, Chest, ...) + `EquippableItem`
+   data (slot, stat modifiers, weapon/armor link) layered over `ItemResource`.
+2. `EquipmentComponent`: equip/unequip applying `StatModifier`s (source = item)
+   to the `StatsComponent`; swap the active `WeaponResource` on the weapon.
+3. Equip from the inventory UI; reflect equipped gear in stats/combat.
+4. Save/load equipped items; foundation for loot affixes (Phase 7).

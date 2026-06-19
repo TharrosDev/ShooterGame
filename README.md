@@ -37,7 +37,10 @@ theoretical ones.
 | Mouse        | Look                                |
 | `Shift`      | Sprint                              |
 | `Space`      | Jump                                |
-| Left mouse   | Melee attack (damages the dummy)    |
+| Left mouse   | Melee attack                        |
+| Right mouse  | Block                               |
+| `E`          | Interact (pick up items)            |
+| `I`          | Toggle inventory                    |
 | `H`          | Heal the training dummy             |
 | `R`          | Respawn the dummy immediately       |
 | `F5` / `F9`  | Quick-save / quick-load             |
@@ -66,6 +69,8 @@ proof that the core systems are wired together.
     ├── Stats/               # Stats, modifiers, attribute resources
     ├── Movement/            # LocomotionComponent (reusable motor)
     ├── Combat/              # Damage pipeline, hitbox/hurtbox, weapons
+    ├── Items/               # Item resources, inventory, pickups, database
+    ├── Interaction/         # InteractableComponent (interact action)
     ├── Player/              # First-person controller + factory
     ├── Enemies/             # Enemy AI state machine + spawner
     ├── Save/                # ISaveable + SaveManager
@@ -88,8 +93,8 @@ save/load.
 | 2  | Player Controller    | ✅ Done     |
 | 3  | Combat Framework     | ✅ Done     |
 | 4  | Enemy AI             | ✅ Done     |
-| 5  | Inventory System     | ⏳ Next     |
-| 6  | Equipment System     | ⬜ Planned  |
+| 5  | Inventory System     | ✅ Done     |
+| 6  | Equipment System     | ⏳ Next     |
 | 7  | Loot Generation      | ⬜ Planned  |
 | 8  | Progression System   | ⬜ Planned  |
 | 9  | Quest Framework      | ⬜ Planned  |

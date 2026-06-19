@@ -5,6 +5,7 @@ using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Enemies;
 using Embervale.Entities;
+using Embervale.Items;
 using Embervale.Player;
 using Embervale.Save;
 using Embervale.Stats;
@@ -33,6 +34,7 @@ public partial class GameBootstrap : Node3D
     private static readonly Vector3 PlayerSpawn = new(0f, 1.2f, 5f);
 
     private DebugHud _hud = null!;
+    private InventoryPanel _inventoryPanel = null!;
     private Entity? _dummy;
     private PlayerCharacter? _player;
     private double _respawnCountdown = -1d;
@@ -46,18 +48,22 @@ public partial class GameBootstrap : Node3D
         ProcessMode = ProcessModeEnum.Always;
 
         GameInput.EnsureActions();
+        ItemDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
         AddChild(_hud);
+        _inventoryPanel = new InventoryPanel();
+        AddChild(_inventoryPanel);
 
         SubscribeEvents();
         SpawnDummy();
         SpawnPlayer();
         SpawnEnemyCamp();
+        SpawnLoot();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block. Goblins roam to the north.");
+        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, E interact, I inventory. Goblins roam to the north.");
     }
 
     public override void _ExitTree()
@@ -206,7 +212,26 @@ public partial class GameBootstrap : Node3D
         AddChild(_player);
         ServiceLocator.Instance?.Register(_player);
         _hud.SetPlayer(_player);
+        _inventoryPanel.SetInventory(_player.GetComponent<InventoryComponent>());
         Log.Info($"Spawned player at {_player.Position}. Facing the training dummy.");
+    }
+
+    private void SpawnLoot()
+    {
+        // A few collectables strewn between the player and the goblin camp.
+        TryDropPickup("item.potion.health", 2, new Vector3(1.5f, 0f, 2f));
+        TryDropPickup("item.material.iron_ore", 3, new Vector3(-2f, 0f, 0f));
+        TryDropPickup("item.gem.ruby", 1, new Vector3(0f, 0f, -3f));
+        TryDropPickup("item.currency.gold", 25, new Vector3(2.5f, 0f, -1f));
+    }
+
+    private void TryDropPickup(string itemId, int quantity, Vector3 position)
+    {
+        ItemResource? item = ItemDatabase.Get(itemId);
+        if (item != null)
+        {
+            AddChild(ItemPickupFactory.Create(item, quantity, position));
+        }
     }
 
     private void SpawnEnemyCamp()
@@ -314,10 +339,17 @@ public partial class GameBootstrap : Node3D
             Log.Info($"{e.Entity.DisplayName} destroyed. Respawning in {RespawnDelaySeconds:0}s...");
             _respawnCountdown = RespawnDelaySeconds;
         }
-        else
+        else if (e.Entity is EnemyEntity)
         {
-            // Enemies handle their own death/despawn via the spawn director.
+            // Enemies despawn via the spawn director; drop a little loot on death.
             Log.Info($"{e.Entity.DisplayName} was defeated.");
+            Vector3 pos = e.Entity.Body.GlobalPosition;
+            TryDropPickup("item.material.goblin_hide", 1, new Vector3(pos.X, 0f, pos.Z));
+            if (GD.Randf() < 0.5f)
+            {
+                int gold = (int)(GD.Randi() % 10) + 3;
+                TryDropPickup("item.currency.gold", gold, new Vector3(pos.X + 0.6f, 0f, pos.Z));
+            }
         }
     }
 

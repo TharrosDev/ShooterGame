@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlitmruby"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.gem.ruby"
+DisplayName = "Ruby"
+Description = "A flawless gem that catches firelight like a captured ember."
+Type = 4
+Rarity = 2
+MaxStack = 20
+Weight = 0.1
+Value = 120
