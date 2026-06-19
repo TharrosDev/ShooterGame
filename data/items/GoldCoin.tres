@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlitmgold"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.currency.gold"
+DisplayName = "Gold Coin"
+Description = "The coin of the realm."
+Type = 0
+Rarity = 0
+MaxStack = 9999
+Weight = 0.0
+Value = 1

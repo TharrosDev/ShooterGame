@@ -2,6 +2,7 @@ using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Interaction;
 using Embervale.Movement;
 using Godot;
 
@@ -22,6 +23,9 @@ public partial class PlayerController : EntityComponent
 {
     [Export]
     public float MouseSensitivity { get; set; } = 0.0028f;
+
+    [Export]
+    public float InteractRange { get; set; } = 3f;
 
     /// <summary>Pitch node (rotated up/down). The camera is its child.</summary>
     public Node3D? CameraPivot { get; set; }
@@ -75,6 +79,35 @@ public partial class PlayerController : EntityComponent
         {
             _weapon?.TryAttack();
         }
+
+        if (Godot.Input.IsActionJustPressed(GameInput.Interact))
+        {
+            TryInteract();
+        }
+    }
+
+    private void TryInteract()
+    {
+        if (CameraPivot == null || Entity?.Body is not CharacterBody3D body)
+        {
+            return;
+        }
+
+        PhysicsDirectSpaceState3D space = body.GetWorld3D().DirectSpaceState;
+        Vector3 from = CameraPivot.GlobalPosition;
+        Vector3 to = from + (-CameraPivot.GlobalTransform.Basis.Z * InteractRange);
+
+        var query = PhysicsRayQueryParameters3D.Create(from, to);
+        query.Exclude = new Godot.Collections.Array<Rid> { body.GetRid() };
+
+        Godot.Collections.Dictionary hit = space.IntersectRay(query);
+        if (hit.Count == 0 || hit["collider"].AsGodotObject() is not Node collider)
+        {
+            return;
+        }
+
+        IEntity? target = EntityNode.FindOwner(collider);
+        target?.GetComponent<InteractableComponent>()?.Interact(Entity!);
     }
 
     public override void _Input(InputEvent @event)

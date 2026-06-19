@@ -86,7 +86,7 @@ public partial class DebugHud : CanvasLayer
         }
 
         sb.Append($"\nLast hit: {_lastHit}\n");
-        sb.Append("\nWASD move | Mouse look | LMB attack | RMB block\n[H] heal  [R] respawn  [F5/F9] save/load  [Esc] pause");
+        sb.Append("\nWASD move | Mouse look | LMB attack | RMB block\nE interact | I inventory | [H] heal | [R] respawn\n[F5/F9] save/load | [Esc] pause");
         _label.Text = sb.ToString();
     }
 

@@ -1,0 +1,221 @@
+using System.Collections.Generic;
+using Embervale.Core.Events;
+using Embervale.Entities;
+using Embervale.Save;
+using Godot;
+
+namespace Embervale.Items;
+
+/// <summary>
+/// A slot-based, stacking item container attached to an entity. Adding merges
+/// into existing stacks of the same item (respecting <see cref="ItemResource.MaxStack"/>)
+/// before consuming new slots up to <see cref="Capacity"/>. Tracks total weight
+/// for future encumbrance. Persists its contents via <see cref="ISaveable"/>
+/// (item ids + quantities, resolved through the <see cref="ItemDatabase"/> on load).
+///
+/// This is the substrate for equipment (Phase 6), loot (Phase 7) and crafting
+/// (Phase 14).
+/// </summary>
+[GlobalClass]
+public partial class InventoryComponent : EntityComponent, ISaveable
+{
+    [Export] public int Capacity { get; set; } = 24;
+
+    /// <summary>Informational weight budget; not yet enforced (drives encumbrance later).</summary>
+    [Export] public float MaxWeight { get; set; } = 100f;
+
+    private readonly List<ItemStack> _stacks = new();
+
+    public IReadOnlyList<ItemStack> Stacks => _stacks;
+
+    public int UsedSlots => _stacks.Count;
+
+    public string SaveId => $"inventory:{Entity?.RuntimeId ?? 0}";
+
+    public float TotalWeight
+    {
+        get
+        {
+            float total = 0f;
+            foreach (ItemStack stack in _stacks)
+            {
+                total += stack.Weight;
+            }
+
+            return total;
+        }
+    }
+
+    public bool IsOverEncumbered => TotalWeight > MaxWeight;
+
+    protected override void OnInitialize()
+    {
+        SaveManager.Instance?.Register(this);
+    }
+
+    protected override void OnTeardown()
+    {
+        SaveManager.Instance?.Unregister(this);
+    }
+
+    /// <summary>
+    /// Adds up to <paramref name="quantity"/> of an item, stacking then filling
+    /// empty slots. Returns the amount actually stored (less than requested if the
+    /// inventory ran out of room).
+    /// </summary>
+    public int AddItem(ItemResource item, int quantity)
+    {
+        if (item == null || quantity <= 0)
+        {
+            return 0;
+        }
+
+        int remaining = quantity;
+
+        // 1) Top up existing stacks of the same item.
+        foreach (ItemStack stack in _stacks)
+        {
+            if (remaining <= 0)
+            {
+                break;
+            }
+
+            if (stack.Item.Id != item.Id || stack.SpaceLeft <= 0)
+            {
+                continue;
+            }
+
+            int put = Mathf.Min(stack.SpaceLeft, remaining);
+            stack.Quantity += put;
+            remaining -= put;
+        }
+
+        // 2) Consume new slots while there is room.
+        while (remaining > 0 && _stacks.Count < Capacity)
+        {
+            int put = Mathf.Min(remaining, item.MaxStack);
+            _stacks.Add(new ItemStack(item, put));
+            remaining -= put;
+        }
+
+        int added = quantity - remaining;
+        if (added > 0)
+        {
+            NotifyChanged();
+        }
+
+        return added;
+    }
+
+    public bool RemoveItem(ItemResource item, int quantity) => RemoveItem(item.Id, quantity);
+
+    /// <summary>Removes <paramref name="quantity"/> across stacks. Fails if there isn't enough.</summary>
+    public bool RemoveItem(string itemId, int quantity)
+    {
+        if (quantity <= 0)
+        {
+            return true;
+        }
+
+        if (CountOf(itemId) < quantity)
+        {
+            return false;
+        }
+
+        int remaining = quantity;
+        for (int i = _stacks.Count - 1; i >= 0 && remaining > 0; i--)
+        {
+            if (_stacks[i].Item.Id != itemId)
+            {
+                continue;
+            }
+
+            int take = Mathf.Min(_stacks[i].Quantity, remaining);
+            _stacks[i].Quantity -= take;
+            remaining -= take;
+            if (_stacks[i].Quantity <= 0)
+            {
+                _stacks.RemoveAt(i);
+            }
+        }
+
+        NotifyChanged();
+        return true;
+    }
+
+    public int CountOf(ItemResource item) => CountOf(item.Id);
+
+    public int CountOf(string itemId)
+    {
+        int total = 0;
+        foreach (ItemStack stack in _stacks)
+        {
+            if (stack.Item.Id == itemId)
+            {
+                total += stack.Quantity;
+            }
+        }
+
+        return total;
+    }
+
+    public bool Contains(string itemId, int quantity = 1) => CountOf(itemId) >= quantity;
+
+    public void Clear()
+    {
+        if (_stacks.Count == 0)
+        {
+            return;
+        }
+
+        _stacks.Clear();
+        NotifyChanged();
+    }
+
+    private void NotifyChanged()
+    {
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new InventoryChangedEvent(Entity));
+        }
+    }
+
+    // --- ISaveable ----------------------------------------------------------
+
+    public Godot.Collections.Dictionary Save()
+    {
+        var stacks = new Godot.Collections.Array();
+        foreach (ItemStack stack in _stacks)
+        {
+            stacks.Add(new Godot.Collections.Dictionary
+            {
+                ["id"] = stack.Item.Id,
+                ["qty"] = stack.Quantity,
+            });
+        }
+
+        return new Godot.Collections.Dictionary { ["stacks"] = stacks };
+    }
+
+    public void Load(Godot.Collections.Dictionary data)
+    {
+        _stacks.Clear();
+
+        if (data.TryGetValue("stacks", out Variant stacksVariant))
+        {
+            foreach (Variant entry in stacksVariant.AsGodotArray())
+            {
+                var dict = entry.AsGodotDictionary();
+                string id = dict["id"].AsString();
+                int qty = dict["qty"].AsInt32();
+                ItemResource? item = ItemDatabase.Get(id);
+                if (item != null)
+                {
+                    AddItem(item, qty);
+                }
+            }
+        }
+
+        NotifyChanged();
+    }
+}

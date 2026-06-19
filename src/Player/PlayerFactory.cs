@@ -1,5 +1,6 @@
 using Embervale.Combat;
 using Embervale.Entities;
+using Embervale.Items;
 using Embervale.Movement;
 using Embervale.Stats;
 using Godot;
@@ -42,6 +43,7 @@ public static class PlayerFactory
         player.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes });
         player.AddChild(new LocomotionComponent { Name = "Locomotion" });
         player.AddChild(new CombatComponent { Name = "Combat", Team = PlayerTeam });
+        player.AddChild(new InventoryComponent { Name = "Inventory" });
         player.AddChild(BuildHurtbox());
 
         var cameraPivot = new Node3D
