@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlitmingot"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.iron_ingot"
+DisplayName = "Iron Ingot"
+Description = "A bar of smelted iron, ready for the forge."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 1.5
+Value = 12

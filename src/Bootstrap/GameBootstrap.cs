@@ -3,6 +3,7 @@ using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Enemies;
 using Embervale.Entities;
@@ -44,6 +45,7 @@ public partial class GameBootstrap : Node3D
     private InventoryPanel _inventoryPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
     private DialoguePanel _dialoguePanel = null!;
+    private CraftingPanel _craftingPanel = null!;
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
     private SkyController _sky = null!;
@@ -55,7 +57,7 @@ public partial class GameBootstrap : Node3D
 
     public override void _Ready()
     {
-        Log.Info("=== Embervale bootstrapping (Phase 13: World Systems) ===");
+        Log.Info("=== Embervale bootstrapping (Phase 15: Crafting) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
         // processing input even while the tree is paused (to unpause).
@@ -72,6 +74,7 @@ public partial class GameBootstrap : Node3D
         SpellDatabase.Initialize();
         WeatherDatabase.Initialize();
         EncounterDatabase.Initialize();
+        RecipeDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -82,6 +85,8 @@ public partial class GameBootstrap : Node3D
         AddChild(_questLogPanel);
         _dialoguePanel = new DialoguePanel();
         AddChild(_dialoguePanel);
+        _craftingPanel = new CraftingPanel();
+        AddChild(_craftingPanel);
 
         // The world clock drives NPC routines; create it before the NPCs below so it is
         // registered in the ServiceLocator when their schedules first read the time.
@@ -104,10 +109,11 @@ public partial class GameBootstrap : Node3D
         SpawnEnemyCamp();
         SpawnLoot();
         SpawnQuestGiver();
+        SpawnCraftingStations();
         SpawnEncounterDirector();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, Q cast, F cycle spell, E interact, I inventory. Day/night and weather turn; encounters roam.");
+        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, Q cast, F cycle spell, E interact/craft, I inventory. Stations sit west of spawn.");
     }
 
     public override void _ExitTree()
@@ -298,6 +304,11 @@ public partial class GameBootstrap : Node3D
         TryDropPickup("item.gem.ruby", 1, new Vector3(0f, 0f, -3f));
         TryDropPickup("item.currency.gold", 25, new Vector3(2.5f, 0f, -1f));
 
+        // Crafting materials so the stations to the west have something to work with.
+        TryDropPickup("item.material.iron_ore", 4, new Vector3(-4.5f, 0f, 6f));
+        TryDropPickup("item.material.goblin_hide", 4, new Vector3(-4f, 0f, 6.8f));
+        TryDropPickup("item.material.healing_herb", 5, new Vector3(-3.2f, 0f, 6.6f));
+
         // Equippable gear to try out the equipment screen.
         TryDropPickup("item.armor.leather_cap", 1, new Vector3(-1.2f, 0f, 3f));
         TryDropPickup("item.armor.leather_vest", 1, new Vector3(-3f, 0f, 2.5f));
@@ -357,6 +368,19 @@ public partial class GameBootstrap : Node3D
         giver.AddChild(new ScheduleComponent { Name = "Schedule", ScheduleId = "schedule.elder" });
         AddChild(giver);
         Log.Info("The Village Elder keeps a daily routine near the spawn — talk to him for a task.");
+    }
+
+    private void SpawnCraftingStations()
+    {
+        // A little crafting yard west of the spawn: smelt/forge at the forge, tan/stitch at
+        // the workbench, brew at the alchemy table. Walk up and press E to use one.
+        AddChild(CraftingStationFactory.Create(
+            CraftingStationType.Forge, "Forge", new Vector3(-4.5f, 0f, 4.5f), new Color(0.45f, 0.20f, 0.16f)));
+        AddChild(CraftingStationFactory.Create(
+            CraftingStationType.Workbench, "Workbench", new Vector3(-3f, 0f, 5f), new Color(0.45f, 0.32f, 0.18f)));
+        AddChild(CraftingStationFactory.Create(
+            CraftingStationType.Alchemy, "Alchemy Table", new Vector3(-3.5f, 0f, 6.2f), new Color(0.20f, 0.42f, 0.40f)));
+        Log.Info("A crafting yard sits west of spawn — forge, workbench and alchemy table.");
     }
 
     private void SpawnEnemyCamp()

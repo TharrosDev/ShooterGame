@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" load_steps=5 format=3 uid="uid://cmbrvlrcpsword"]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+[sub_resource type="Resource" id="Ing_ingot"]
+script = ExtResource("2_ing")
+ItemId = "item.material.iron_ingot"
+Quantity = 3
+
+[sub_resource type="Resource" id="Ing_strips"]
+script = ExtResource("2_ing")
+ItemId = "item.material.leather_strips"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.steel_sword"
+DisplayName = "Forge Steel Sword"
+Description = "Forge ingots and a bound grip into a keen steel blade."
+Station = 1
+Ingredients = Array[Resource]([SubResource("Ing_ingot"), SubResource("Ing_strips")])
+OutputItemId = "item.weapon.steel_sword"
+OutputQuantity = 1
+OutputRarity = 1

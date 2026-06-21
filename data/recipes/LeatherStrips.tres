@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" load_steps=4 format=3 uid="uid://cmbrvlrcpstrips"]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+[sub_resource type="Resource" id="Ing_hide"]
+script = ExtResource("2_ing")
+ItemId = "item.material.goblin_hide"
+Quantity = 2
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.leather_strips"
+DisplayName = "Tan Leather Strips"
+Description = "Cure and cut raw hide into workable leather strips."
+Station = 2
+Ingredients = Array[Resource]([SubResource("Ing_hide")])
+OutputItemId = "item.material.leather_strips"
+OutputQuantity = 1
+OutputRarity = 0

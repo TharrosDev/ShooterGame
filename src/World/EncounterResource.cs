@@ -9,7 +9,7 @@ namespace Embervale.World;
 /// <see cref="EncounterDatabase"/> — a new encounter is a new resource, no code.
 ///
 /// This is deliberately lightweight (a weighted, phase-gated spawn); the richer
-/// "world event" framework — named events with objectives and rewards — is Phase 16.
+/// "world event" framework — named events with objectives and rewards — is Phase 17.
 /// </summary>
 [GlobalClass]
 public partial class EncounterResource : Resource
