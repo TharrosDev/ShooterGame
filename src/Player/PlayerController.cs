@@ -3,6 +3,7 @@ using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Interaction;
+using Embervale.Magic;
 using Embervale.Movement;
 using Godot;
 
@@ -34,6 +35,7 @@ public partial class PlayerController : EntityComponent
     private LocomotionComponent? _locomotion;
     private MeleeWeaponComponent? _weapon;
     private CombatComponent? _combat;
+    private SpellcastingComponent? _spellcasting;
     private float _pitch;
 
     protected override void OnInitialize()
@@ -43,6 +45,7 @@ public partial class PlayerController : EntityComponent
         _locomotion = owner.GetComponent<LocomotionComponent>();
         _weapon = owner.GetComponent<MeleeWeaponComponent>();
         _combat = owner.GetComponent<CombatComponent>();
+        _spellcasting = owner.GetComponent<SpellcastingComponent>();
 
         EventBus.Instance?.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
         CaptureMouse(true);
@@ -86,6 +89,16 @@ public partial class PlayerController : EntityComponent
         if (Godot.Input.IsActionJustPressed(GameInput.Attack))
         {
             _weapon?.TryAttack();
+        }
+
+        if (Godot.Input.IsActionJustPressed(GameInput.Cast))
+        {
+            _spellcasting?.TryCast();
+        }
+
+        if (Godot.Input.IsActionJustPressed(GameInput.CycleSpell))
+        {
+            _spellcasting?.Cycle(1);
         }
 
         if (Godot.Input.IsActionJustPressed(GameInput.Interact))

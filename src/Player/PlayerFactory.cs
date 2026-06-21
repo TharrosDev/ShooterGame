@@ -2,6 +2,7 @@ using Embervale.Combat;
 using Embervale.Dialogue;
 using Embervale.Entities;
 using Embervale.Items;
+using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Progression;
 using Embervale.Quests;
@@ -91,6 +92,23 @@ public static class PlayerFactory
 
         // Story flags: persistent conversation/world memory read & written by dialogue.
         player.AddChild(new StoryFlagsComponent { Name = "StoryFlags" });
+
+        // Magic: status effects can afflict/buff the player, and the spellbook aims
+        // through the camera pivot so bolts fire where the player looks.
+        player.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
+        player.AddChild(new SpellcastingComponent
+        {
+            Name = "Spellcasting",
+            AimNode = cameraPivot,
+            KnownSpellIds = new Godot.Collections.Array<string>
+            {
+                "spell.firebolt",
+                "spell.fireball",
+                "spell.frost_nova",
+                "spell.lesser_heal",
+                "spell.arcane_shield",
+            },
+        });
 
         player.AddChild(new PlayerController
         {

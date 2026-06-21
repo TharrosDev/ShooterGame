@@ -39,6 +39,8 @@ theoretical ones.
 | `Space`      | Jump                                |
 | Left mouse   | Melee attack                        |
 | Right mouse  | Block                               |
+| `Q`          | Cast the prepared spell             |
+| `F`          | Cycle the prepared spell            |
 | `E`          | Interact (pick up items, talk to NPCs) |
 | `I`          | Toggle inventory                    |
 | `J`          | Toggle quest journal                |
@@ -76,6 +78,7 @@ proof that the core systems are wired together.
     ├── Dialogue/            # Node-graph conversations, choices, story flags
     ├── World/               # World clock / time-of-day
     ├── Npc/                 # NPC daily schedules + reactions
+    ├── Magic/               # Spells, projectiles, AoE, status effects
     ├── Player/              # First-person controller + factory
     ├── Enemies/             # Enemy AI state machine + spawner
     ├── Save/                # ISaveable + SaveManager
@@ -111,8 +114,8 @@ save/load.
 | 9  | Quest Framework      | ✅ Done     |
 | 10 | Dialogue System      | ✅ Done     |
 | 11 | NPC Schedules        | ✅ Done     |
-| 12 | Magic System         | ⏳ Next     |
-| 13 | World Systems        | ⬜ Planned  |
+| 12 | Magic System         | ✅ Done     |
+| 13 | World Systems        | ⏳ Next     |
 | 14 | Crafting             | ⬜ Planned  |
 | 15 | Faction Systems      | ⬜ Planned  |
 | 16 | Procedural Events    | ⬜ Planned  |

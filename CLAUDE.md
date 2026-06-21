@@ -91,7 +91,9 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── perks/               # PerkResource presets (rankable passives)
 │   ├── quests/              # QuestResource presets (objectives + rewards)
 │   ├── dialogue/            # DialogueResource presets (node-graph conversations)
-│   └── schedules/           # ScheduleResource presets (NPC daily routines)
+│   ├── schedules/           # ScheduleResource presets (NPC daily routines)
+│   ├── spells/             # SpellResource presets (firebolt, fireball, …)
+│   └── status_effects/     # StatusEffectResource presets (burning, chill, ward)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -111,6 +113,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Dialogue/            # Dialogue graph resources, session runner, story flags
     ├── World/               # WorldClock (time-of-day) + world events
     ├── Npc/                 # NPC schedule resources, ScheduleComponent (routines)
+    ├── Magic/               # Spells, projectiles, AoE bursts, status effects
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
@@ -457,6 +460,40 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   it is the speaker freezes it to face the player until `DialogueEndedEvent`. Sandbox: the
   Elder walks well→forge→square→home→sleep as the clock turns, flees goblins, stops to talk.
 
+### 6.6g Magic (`src/Magic`)
+
+- **Spell content** — `SpellResource` (`[GlobalClass]`, `data/spells/*.tres`): `Id`,
+  `DisplayName`, a `School` (a `DamageType`, so spells reuse the combat mitigation pipeline
+  and tint via `SpellSchools.Color`), a `Delivery` (`SpellDelivery` Projectile/Area/Self),
+  `ManaCost`, `Cooldown`, `BaseDamage`, `Healing`, an optional applied `StatusEffectId`, and
+  delivery knobs (`Range`, `ProjectileSpeed`, `ImpactRadius`). `SpellDatabase` indexes them.
+- **Status effects** — `StatusEffectResource` (`[GlobalClass]`, `data/status_effects/*.tres`):
+  a timed condition with optional DoT (`DamagePerTick`/`TickInterval`) and one stat modifier
+  (`ModStat`/`ModType`/`ModValue`) — burns, chills/slows, buffs. `StatusEffectDatabase` indexes
+  them. **`StatusEffectsComponent`** (on every combatant — player, enemies, dummy) ticks active
+  effects: DoT goes through `StatsComponent.ApplyDamage(.., source)` (DoT kills attribute to the
+  caster); modifiers are `StatModifier`s sourced to the runtime `StatusEffect` instance (cleanly
+  removed on expiry). Re-applying refreshes duration. **Transient — not saved** (like stagger).
+- **`SpellcastingComponent`** (`EntityComponent`, `ISaveable`, the magic analogue of
+  `MeleeWeaponComponent`) — `KnownSpellIds`, a prepared index, per-spell cooldowns, mana spend
+  and `TryCast()`/`Cycle()`. Delivery is resource-driven: `CastProjectile` (spawns a
+  `SpellProjectile` along `AimNode`, the player's camera pivot), `CastArea`
+  (`SpellResolver.Detonate` burst centred on the caster), `CastSelf` (heal and/or self-buff).
+  Input-agnostic and reusable by any actor. Persists known spells + prepared index (cooldowns
+  transient). Damage rolls via **`CombatMath.RollSpell`** (SpellPower scaling, the mirror of
+  `RollAttack`).
+- **`SpellProjectile`** (`Area3D`, Hitbox layer / mask Hurtbox|World) — the moving analogue of a
+  `Hitbox`: flies forward each physics frame, resolves on the first enemy hurtbox, world contact
+  or end of range. **`SpellResolver`** does the impact: `HitOne` (single target) or `Detonate`
+  (a Hurtbox-layer sphere query for AoE), honouring the same friendly-fire rules as hitboxes
+  (never the caster, never same-team), then applies the spell's status. `SpellFlash` is a
+  short-lived cosmetic burst sphere.
+- **UI & input** — `Q` casts the prepared spell, `F` cycles it; `DebugHud` shows mana, the
+  prepared spell + cooldown, and active status effects on player/target. Events:
+  `SpellCastEvent`/`SpellSelectedEvent`/`StatusEffectAppliedEvent`/`StatusEffectRemovedEvent`
+  (`src/Magic/MagicEvents.cs`). Sandbox spells: Firebolt, Fireball (AoE), Frost Nova (Area
+  slow), Lesser Heal (Self), Arcane Shield (Self buff).
+
 ### 6.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -479,7 +516,7 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
 - **`GameInput`** — action name constants + `EnsureActions()` binding them in
   code (idempotent). Actions: `move_forward/back/left/right`, `jump` (Space),
   `sprint` (Shift), `interact` (E), `attack` (LMB), `block` (RMB), `cast` (Q),
-  `inventory` (I), `pause` (Esc).
+  `cycle_spell` (F), `inventory` (I), `journal` (J), `pause` (Esc).
 
 ### 6.9 Bootstrap & UI
 
@@ -681,6 +718,24 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
    a static NPC `Entity`; it walks the routine off the `WorldClock` and reacts to alerts /
    dialogue. No code change for new routines.
 
+**A new spell**
+1. Author `data/spells/Xxx.tres` (`script_class="SpellResource"`): unique `Id`, `School`
+   (a `DamageType`), `Delivery` (`0`=Projectile / `1`=Area / `2`=Self), `ManaCost`,
+   `Cooldown`, `BaseDamage`, `Healing` (Self), an optional `StatusEffectId`, and the
+   delivery knobs (`Range`/`ProjectileSpeed` for projectiles, `ImpactRadius` for an AoE
+   burst — a Projectile with `ImpactRadius > 0` detonates as an area on impact).
+2. Auto-indexed by `SpellDatabase`. Add the id to a `SpellcastingComponent.KnownSpellIds`
+   (the player's is set in `PlayerFactory`); cast with `Q`, cycle with `F`. No code change.
+
+**A new status effect**
+1. Author `data/status_effects/Xxx.tres` (`script_class="StatusEffectResource"`): unique
+   `Id`, `School`, `Duration`, optional DoT (`DamagePerTick`/`TickInterval`) and one stat
+   modifier (`ModStat`/`ModType`/`ModValue`, e.g. `MoveSpeed` PercentMult `-0.5` = a slow),
+   and `IsBeneficial` for buffs.
+2. Auto-indexed by `StatusEffectDatabase`. Reference it from a spell's `StatusEffectId`; it
+   applies to whoever the spell hits (or the caster, for a Self cast) via the target's
+   `StatusEffectsComponent`. No code change.
+
 **A new stat**
 1. Add to the `StatType` enum; if it's a depleting resource, update
    `StatTypes.IsResource`.
@@ -729,10 +784,11 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
-8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules**. Next: **12 Magic**.
+8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic**.
+Next: **13 World Systems**.
 
-Then (in order): 13 World Systems · 14 Crafting · 15 Factions ·
-16 Procedural Events · 17 Optimization · 18 Content Expansion.
+Then (in order): 14 Crafting · 15 Factions · 16 Procedural Events ·
+17 Optimization · 18 Content Expansion.
 
 See `docs/ROADMAP.md` for per-phase delivery notes and the next-steps checklist.
 

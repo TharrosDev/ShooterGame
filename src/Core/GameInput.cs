@@ -21,6 +21,7 @@ public static class GameInput
     public const string Attack = "attack";
     public const string Block = "block";
     public const string Cast = "cast";
+    public const string CycleSpell = "cycle_spell";
     public const string Inventory = "inventory";
     public const string Journal = "journal";
     public const string Pause = "pause";
@@ -40,6 +41,7 @@ public static class GameInput
         Bind(Attack, new InputEventMouseButton { ButtonIndex = MouseButton.Left });
         Bind(Block, new InputEventMouseButton { ButtonIndex = MouseButton.Right });
         Bind(Cast, new InputEventKey { PhysicalKeycode = Key.Q });
+        Bind(CycleSpell, new InputEventKey { PhysicalKeycode = Key.F });
     }
 
     private static void Bind(string action, InputEvent trigger)
