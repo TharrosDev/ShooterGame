@@ -619,11 +619,20 @@ announced events with an objective, time limit and rewards.
   that state will not survive a reload. World singletons keep fixed keys (`worldclock`,
   `weather`).
 
-> Caveat: only actors with a `PersistentId` survive cross-session. The player and
-> authored world actors set one; spawned/dynamic actors (loot, ambient mobs) are
-> deliberately transient. A general stable-id scheme for **named spawned NPCs and
-> world containers** (registry + spawn-time id assignment) is the next persistence
-> step — `PersistentId` is the groundwork it will build on.
+- **Spawned-actor persistence** — `SaveManager` only restores components of actors **already
+  alive**; it can't recreate one missing from a freshly-loaded scene. `PersistentSpawnDirector`
+  (`src/Save/`, a `Node` + `ISaveable` `"spawns"`, `ServiceLocator`-registered) closes that gap:
+  `Spawn(templateId, persistentId, pos, yaw)` assigns identity and tracks the actor; `Save()`
+  writes a manifest (template + id + transform) of the live tracked actors; `Load()` reconciles —
+  despawning tracked actors absent from the save and recreating missing ones via
+  `PersistentActorRegistry` (template id → builder, mirroring `EnemyTemplateRegistry`). Each
+  recreated actor's components restore themselves through `SaveManager`'s **in-flight-load hook**
+  (`Register` checks the active snapshot, so an actor that comes online mid-load restores at once).
+  Sandbox: a persistent "Supply Cache" (`prop.cache`) east of spawn; dev console `pspawn`/`pdespawn`/
+  `plist` exercise it. Ambient mobs/loot stay deliberately transient.
+
+> Caveat: this is the foundation slice — only actors routed through the director persist. Converting
+> ambient enemies/loot (with kill/pickup despawn tracking) is intentionally out of scope.
 
 ### 6.8 Flow & input
 
