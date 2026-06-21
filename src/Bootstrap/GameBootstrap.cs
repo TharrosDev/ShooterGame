@@ -54,6 +54,7 @@ public partial class GameBootstrap : Node3D
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
     private SkyController _sky = null!;
+    private PersistentSpawnDirector _persistentSpawns = null!;
     private DirectionalLight3D _sun = null!;
     private Godot.Environment _environment = null!;
     private Entity? _dummy;
@@ -133,6 +134,13 @@ public partial class GameBootstrap : Node3D
         _sky = new SkyController { Name = "Sky", Sun = _sun, Environment = _environment };
         AddChild(_sky);
 
+        // Persistent spawned actors: a director that recreates saved named actors/containers on
+        // load (the SaveManager alone only restores components of actors already in the scene).
+        PersistentActorRegistry.Clear();
+        PersistentActorRegistry.Register("prop.cache", BuildPersistentCache);
+        _persistentSpawns = new PersistentSpawnDirector { Name = "PersistentSpawns" };
+        AddChild(_persistentSpawns);
+
         SubscribeEvents();
         SpawnDummy();
         SpawnPlayer();
@@ -141,6 +149,7 @@ public partial class GameBootstrap : Node3D
         SpawnQuestGiver();
         SpawnCraftingStations();
         SpawnEncounterDirector();
+        SpawnPersistentActors();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
         Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, Q cast, F cycle spell, E interact/craft, I inventory. Stations sit west of spawn.");
@@ -431,6 +440,45 @@ public partial class GameBootstrap : Node3D
         giver.AddChild(new ScheduleComponent { Name = "Schedule", ScheduleId = "schedule.elder" });
         AddChild(giver);
         Log.Info("The Village Elder keeps a daily routine near the spawn — talk to him for a task.");
+    }
+
+    private void SpawnPersistentActors()
+    {
+        // A persistent supply cache: it is recreated on load (existence + transform) and its
+        // InventoryComponent restores its contents — proving the spawned-actor persistence path.
+        _persistentSpawns.Spawn("prop.cache", "cache.world.start", new Vector3(5f, 0f, 0f));
+        Log.Info("A persistent supply cache sits east of spawn; it survives save/load (try F5, despawn it, F9).");
+    }
+
+    /// <summary>Builds a persistent storage cache prop (registered as the "prop.cache" template).</summary>
+    private static Node3D BuildPersistentCache(Vector3 position)
+    {
+        var cache = new Entity
+        {
+            Name = "PersistentCache",
+            DisplayName = "Supply Cache",
+            Position = position,
+        };
+
+        cache.AddChild(new MeshInstance3D
+        {
+            Name = "Mesh",
+            Mesh = new BoxMesh { Size = new Vector3(0.8f, 0.8f, 0.8f) },
+            Position = new Vector3(0f, 0.4f, 0f),
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.55f, 0.43f, 0.20f) },
+        });
+
+        var collider = new StaticBody3D { Name = "Collider" };
+        collider.AddChild(new CollisionShape3D
+        {
+            Shape = new BoxShape3D { Size = new Vector3(0.8f, 0.8f, 0.8f) },
+            Position = new Vector3(0f, 0.4f, 0f),
+        });
+        cache.AddChild(collider);
+
+        // A persistent container's contents round-trip through the inventory save path.
+        cache.AddChild(new InventoryComponent { Name = "Inventory", Capacity = 12 });
+        return cache;
     }
 
     private void SpawnCraftingStations()

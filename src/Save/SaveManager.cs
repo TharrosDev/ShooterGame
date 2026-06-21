@@ -26,6 +26,11 @@ public sealed partial class SaveManager : Node
 
     private readonly List<ISaveable> _saveables = new();
 
+    // While a load is in flight these hold the loaded snapshot so a saveable that comes online
+    // mid-load (an actor recreated by the PersistentSpawnDirector) can restore itself immediately.
+    private Godot.Collections.Dictionary? _activeLoad;
+    private HashSet<string>? _activeClaimed;
+
     public override void _EnterTree()
     {
         if (Instance != null && Instance != this)
@@ -51,6 +56,25 @@ public sealed partial class SaveManager : Node
         if (!_saveables.Contains(saveable))
         {
             _saveables.Add(saveable);
+        }
+
+        // If a load is in flight, an actor that registers now (e.g. one the spawn director just
+        // recreated) restores itself from the in-flight snapshot rather than missing this load.
+        if (_activeLoad != null)
+        {
+            string id = saveable.SaveId;
+            if (_activeLoad.TryGetValue(id, out Variant state) && state.VariantType == Variant.Type.Dictionary)
+            {
+                _activeClaimed?.Add(id);
+                try
+                {
+                    saveable.Load(state.AsGodotDictionary());
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Saveable '{id}' threw in Load() during spawn restore: {ex}");
+                }
+            }
         }
     }
 
@@ -170,37 +194,57 @@ public sealed partial class SaveManager : Node
         int restored = 0;
         int failures = 0;
         var claimed = new HashSet<string>();
-        foreach (ISaveable saveable in _saveables)
+
+        // Publish the snapshot so the Register hook can restore actors spawned during this load
+        // (e.g. the PersistentSpawnDirector recreating saved actors as it is itself restored).
+        _activeLoad = objects;
+        _activeClaimed = claimed;
+        try
         {
-            string id = saveable.SaveId;
-            if (!objects.TryGetValue(id, out Variant state) || state.VariantType != Variant.Type.Dictionary)
+            // Iterate a snapshot: a saveable's Load() may spawn actors that register new saveables,
+            // which would otherwise mutate the live list mid-enumeration.
+            foreach (ISaveable saveable in _saveables.ToArray())
             {
-                Log.Warn($"Save slot '{slot}' has no usable entry for '{id}'; it keeps its current state.");
-                continue;
+                string id = saveable.SaveId;
+                if (claimed.Contains(id))
+                {
+                    continue; // already restored via the spawn hook
+                }
+
+                if (!objects.TryGetValue(id, out Variant state) || state.VariantType != Variant.Type.Dictionary)
+                {
+                    Log.Warn($"Save slot '{slot}' has no usable entry for '{id}'; it keeps its current state.");
+                    continue;
+                }
+
+                claimed.Add(id);
+                try
+                {
+                    saveable.Load(state.AsGodotDictionary());
+                    restored++;
+                }
+                catch (Exception ex)
+                {
+                    failures++;
+                    Log.Error($"Saveable '{id}' threw in Load(); leaving it at its current state: {ex}");
+                }
             }
 
-            claimed.Add(id);
-            try
+            // Surface state that has no live owner — usually a transient/runtime-id actor
+            // that no longer exists, or a renamed SaveId. Helps catch persistence drift.
+            foreach (System.Collections.Generic.KeyValuePair<Variant, Variant> entry in objects)
             {
-                saveable.Load(state.AsGodotDictionary());
-                restored++;
-            }
-            catch (Exception ex)
-            {
-                failures++;
-                Log.Error($"Saveable '{id}' threw in Load(); leaving it at its current state: {ex}");
+                string id = entry.Key.AsString();
+                if (!claimed.Contains(id))
+                {
+                    Log.Warn($"Save slot '{slot}' entry '{id}' had no live claimant on load (orphaned state).");
+                }
             }
         }
-
-        // Surface state that has no live owner — usually a transient/runtime-id actor
-        // that no longer exists, or a renamed SaveId. Helps catch persistence drift.
-        foreach (System.Collections.Generic.KeyValuePair<Variant, Variant> entry in objects)
+        finally
         {
-            string id = entry.Key.AsString();
-            if (!claimed.Contains(id))
-            {
-                Log.Warn($"Save slot '{slot}' entry '{id}' had no live claimant on load (orphaned state).");
-            }
+            _activeLoad = null;
+            _activeClaimed = null;
         }
 
         Log.Info($"Loaded slot '{slot}'; restored {restored} object(s)" + (failures > 0 ? $" ({failures} failed)." : "."));

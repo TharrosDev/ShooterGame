@@ -6,6 +6,7 @@ using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Player;
 using Embervale.Progression;
+using Embervale.Save;
 using Embervale.Stats;
 using Embervale.World;
 using Godot;
@@ -38,6 +39,10 @@ public static class DevCommands
         console.Register(new ConsoleCommand("repro", "repro [name]", "Run a repro scenario.", Repro));
         console.Register(new ConsoleCommand("invariants", "invariants", "Run the world integrity check.", (_, _) => WorldIntegrityChecker.Run()));
         console.Register(new ConsoleCommand("validate", "validate", "Validate authored content cross-references.", (_, _) => ContentValidator.Run()));
+
+        console.Register(new ConsoleCommand("pspawn", "pspawn [templateId]", "Spawn a persistent actor at the player.", PSpawn));
+        console.Register(new ConsoleCommand("pdespawn", "pdespawn <persistentId>", "Free a persistent actor (recreated on load).", PDespawn));
+        console.Register(new ConsoleCommand("plist", "plist", "List tracked persistent actors.", PList));
         console.Register(new ConsoleCommand("stats", "stats", "Frame/object counts.", StatsCmd));
     }
 
@@ -196,6 +201,48 @@ public static class DevCommands
         double nodes = Performance.GetMonitor(Performance.Monitor.ObjectNodeCount);
         double orphans = Performance.GetMonitor(Performance.Monitor.ObjectOrphanNodeCount);
         return $"fps {Engine.GetFramesPerSecond()}  nodes {nodes:0}  orphans {orphans:0}  invariant-violations {Invariant.Violations}";
+    }
+
+    private static string PSpawn(DevConsole console, string[] args)
+    {
+        if (!TryService(out PersistentSpawnDirector director))
+        {
+            return "no spawn director";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player))
+        {
+            return "no player";
+        }
+
+        string template = args.Length > 0 ? args[0] : "prop.cache";
+        Embervale.Entities.IEntity? actor = director.Spawn(template, string.Empty, player.GlobalPosition + new Vector3(2f, 0f, 0f));
+        return actor == null ? $"could not spawn '{template}'" : $"spawned {actor.PersistentId} ({template})";
+    }
+
+    private static string PDespawn(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            return "usage: pdespawn <persistentId>";
+        }
+
+        if (!TryService(out PersistentSpawnDirector director))
+        {
+            return "no spawn director";
+        }
+
+        return director.Despawn(args[0]) ? $"despawned {args[0]}" : $"no tracked actor '{args[0]}'";
+    }
+
+    private static string PList(DevConsole console, string[] args)
+    {
+        if (!TryService(out PersistentSpawnDirector director))
+        {
+            return "no spawn director";
+        }
+
+        return director.TrackedIds.Count == 0 ? "no persistent actors" : string.Join(", ", director.TrackedIds);
     }
 
     // --- Helpers ------------------------------------------------------------
