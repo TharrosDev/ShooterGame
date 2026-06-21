@@ -1,0 +1,64 @@
+using Embervale.Combat;
+using Godot;
+
+namespace Embervale.Magic;
+
+/// <summary>
+/// A designer-authored spell: the data a <see cref="SpellcastingComponent"/> needs
+/// to resolve a cast. Authored as a <c>.tres</c> under <c>data/spells/</c> and
+/// indexed by <see cref="SpellDatabase"/> — a new spell is a new resource, no code.
+///
+/// A spell's <see cref="School"/> is its <see cref="DamageType"/>, so it flows
+/// straight through the existing damage pipeline (mitigation/resistance) and tints
+/// its projectile via <see cref="SpellSchools"/>. <see cref="Delivery"/> selects the
+/// shape (bolt / burst / self); the remaining fields are read per shape.
+/// </summary>
+[GlobalClass]
+public partial class SpellResource : Resource
+{
+    /// <summary>Stable id, e.g. "spell.firebolt". The save/database key.</summary>
+    [Export] public string Id { get; set; } = "spell.unknown";
+
+    [Export] public string DisplayName { get; set; } = "Unknown Spell";
+
+    [Export(PropertyHint.MultilineText)]
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>The damage school; also the <see cref="DamageType"/> of the hit.</summary>
+    [Export] public DamageType School { get; set; } = DamageType.Fire;
+
+    [Export] public SpellDelivery Delivery { get; set; } = SpellDelivery.Projectile;
+
+    [ExportGroup("Costs")]
+    [Export] public float ManaCost { get; set; } = 10f;
+
+    /// <summary>Seconds before the spell can be cast again.</summary>
+    [Export] public float Cooldown { get; set; } = 1f;
+
+    [ExportGroup("Effect")]
+    /// <summary>Base damage before SpellPower scaling (0 for pure heals/buffs).</summary>
+    [Export] public float BaseDamage { get; set; } = 0f;
+
+    /// <summary>Health restored to the caster for a <see cref="SpellDelivery.Self"/> cast.</summary>
+    [Export] public float Healing { get; set; } = 0f;
+
+    /// <summary>Optional status effect id applied to those the spell affects (or the
+    /// caster, for a Self cast). Resolved via <see cref="StatusEffectDatabase"/>.</summary>
+    [Export] public string StatusEffectId { get; set; } = string.Empty;
+
+    [ExportGroup("Delivery")]
+    /// <summary>Metres a projectile travels before it expires (Projectile only).</summary>
+    [Export] public float Range { get; set; } = 30f;
+
+    /// <summary>Projectile travel speed in metres/second (Projectile only).</summary>
+    [Export] public float ProjectileSpeed { get; set; } = 18f;
+
+    /// <summary>
+    /// Burst radius in metres. For a <see cref="SpellDelivery.Area"/> cast this is the
+    /// nova radius around the caster; for a Projectile, a value &gt; 0 makes it
+    /// detonate as an area-of-effect on impact instead of hitting a single target.
+    /// </summary>
+    [Export] public float ImpactRadius { get; set; } = 0f;
+
+    public bool HasStatusEffect => !string.IsNullOrEmpty(StatusEffectId);
+}

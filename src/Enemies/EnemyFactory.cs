@@ -1,5 +1,6 @@
 using Embervale.Combat;
 using Embervale.Loot;
+using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Progression;
 using Embervale.Stats;
@@ -72,6 +73,8 @@ public static class EnemyFactory
             Hitbox = hitbox,
         });
 
+        // Lets the player's spells burn/chill the goblin (DoT + slows apply here).
+        enemy.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
         enemy.AddChild(new EnemyAIComponent { Name = "AI" });
         enemy.AddChild(new LootComponent { Name = "Loot", TablePath = LootTablePath });
         enemy.AddChild(new ExperienceComponent { Name = "Experience", XpValue = 25 });

@@ -50,8 +50,8 @@ through save/load.
 | 9  | Quest Framework      | ✅ Done      | Event-driven objectives, quest log, rewards, givers, save   |
 | 10 | Dialogue System      | ✅ Done      | Node-graph conversations, choices, conditions/effects, story flags |
 | 11 | NPC Schedules        | ✅ Done      | World clock, data-driven daily routines, event-driven reactions |
-| 12 | Magic System         | ⏳ Next      | Schools, projectiles, AoE, status effects                   |
-| 13 | World Systems        | ⬜ Planned   | Day/night, weather, encounters                              |
+| 12 | Magic System         | ✅ Done      | Schools, projectiles, AoE, status effects                   |
+| 13 | World Systems        | ⏳ Next      | Day/night, weather, encounters                              |
 | 14 | Crafting             | ⬜ Planned   | Recipes, stations, materials                                |
 | 15 | Faction Systems      | ⬜ Planned   | Reputation, consequences                                    |
 | 16 | Procedural Events    | ⬜ Planned   | World events, dynamic spawns                                |
@@ -272,3 +272,39 @@ Core architecture foundation that everything else builds on:
   day, the square at midday, home by dusk, asleep at night — visibly walking between them as
   the (fast) clock turns. Lure goblins near and he flees; talk to him and he stops to face
   you. The clock's time of day round-trips through save/load.
+
+## Phase 12 — delivered (Magic System)
+
+- **Spell content** — `SpellResource` (`[GlobalClass]`, `data/spells/*.tres`) is the data a
+  cast needs: a `School` (its `DamageType`, so spells flow straight through the existing
+  mitigation pipeline and tint via `SpellSchools`), a `Delivery` shape
+  (`Projectile`/`Area`/`Self`), mana cost, cooldown, base damage, healing, an optional applied
+  status effect id, and projectile/range/impact-radius fields. `SpellDatabase` indexes them
+  (the standard static-database pattern). New spell = a `.tres`, no code change.
+- **Status effects** — `StatusEffectResource` (`[GlobalClass]`, `data/status_effects/*.tres`)
+  is a timed condition that can deal damage-over-time (`DamagePerTick`/`TickInterval`) and/or
+  apply one stat modifier (`ModStat`/`ModType`/`ModValue`) — covering burns, chills/slows and
+  buffs alike. `StatusEffectDatabase` indexes them. **`StatusEffectsComponent`**
+  (`EntityComponent`, on every combatant) ticks active effects: DoT applies through the
+  `StatsComponent` credited to the caster (so DoT kills still attribute for progression/quests),
+  and stat modifiers are pushed/pulled as `StatModifier`s sourced to the effect instance.
+  Re-applying refreshes duration; effects are transient (not persisted, like poise/stagger).
+- **`SpellcastingComponent`** (`EntityComponent`, `ISaveable`) — the magic analogue of
+  `MeleeWeaponComponent`: known spells, the prepared index, per-spell cooldowns, mana spend and
+  the cast itself. Delivery is resource-driven — a `SpellProjectile` fired along the caster's
+  aim, an instant `SpellResolver.Detonate` burst around the caster, or a self heal/buff. It is
+  input-agnostic and reusable by any actor. Known spells + the prepared index persist through
+  save/load; cooldowns are transient.
+- **Delivery** — `SpellProjectile` (`Area3D` on the Hitbox layer, the moving analogue of a melee
+  `Hitbox`) flies forward and resolves on the first enemy hurtbox, world contact or end of range;
+  `SpellResolver` applies single-target or radial (sphere-query) damage + status using the same
+  friendly-fire rules as hitboxes, and spawns a short `SpellFlash` to make bursts legible.
+  Spells scale off `SpellPower` via the new `CombatMath.RollSpell` (the mirror of `RollAttack`).
+- **UI & input** — `Q` casts the prepared spell, `F` cycles it; the HUD shows mana, the prepared
+  spell with its cooldown/mana state, and active status effects on the player and target. Events
+  live in `src/Magic/MagicEvents.cs` (`SpellCastEvent`/`SpellSelectedEvent`/`StatusEffect*Event`).
+- **Sandbox** — the player starts knowing five spells: **Firebolt** (single-target bolt + Burning
+  DoT), **Fireball** (projectile that detonates as a burning AoE), **Frost Nova** (an instant
+  burst around the caster that chills/slows), **Lesser Heal** (self heal) and **Arcane Shield**
+  (a self buff warding +Armor). Goblins and the training dummy carry a `StatusEffectsComponent`
+  so the burns and slows visibly land. The spellbook round-trips through save/load.

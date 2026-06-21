@@ -14,6 +14,9 @@ public static class CombatMath
     /// <summary>How much of the attacker's PhysicalPower is added per swing.</summary>
     private const float PowerScaling = 0.5f;
 
+    /// <summary>How much of the caster's SpellPower is added per spell cast.</summary>
+    private const float SpellScaling = 0.6f;
+
     /// <summary>Builds the outgoing damage amount and rolls for a critical hit.</summary>
     public static (float Amount, bool IsCrit) RollAttack(float baseDamage, StatsComponent? attacker)
     {
@@ -23,12 +26,34 @@ public static class CombatMath
             amount += attacker.GetValue(StatType.PhysicalPower) * PowerScaling;
         }
 
+        return RollCrit(amount, attacker);
+    }
+
+    /// <summary>
+    /// Attacker-side spell roll: base + SpellPower scaling + crit. The mirror of
+    /// <see cref="RollAttack"/> for magic, so spells scale off SpellPower the way
+    /// melee scales off PhysicalPower.
+    /// </summary>
+    public static (float Amount, bool IsCrit) RollSpell(float baseDamage, StatsComponent? caster)
+    {
+        float amount = baseDamage;
+        if (caster != null)
+        {
+            amount += caster.GetValue(StatType.SpellPower) * SpellScaling;
+        }
+
+        return RollCrit(amount, caster);
+    }
+
+    /// <summary>Rolls a critical hit against the source's crit stats, scaling the amount.</summary>
+    private static (float Amount, bool IsCrit) RollCrit(float amount, StatsComponent? source)
+    {
         bool isCrit = false;
-        float critChance = attacker?.GetValue(StatType.CritChance) ?? 0f;
+        float critChance = source?.GetValue(StatType.CritChance) ?? 0f;
         if (GD.Randf() < critChance)
         {
             isCrit = true;
-            float critDamage = attacker?.GetValue(StatType.CritDamage) ?? 1.5f;
+            float critDamage = source?.GetValue(StatType.CritDamage) ?? 1.5f;
             amount *= critDamage;
         }
 

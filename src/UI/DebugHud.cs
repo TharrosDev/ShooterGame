@@ -3,6 +3,7 @@ using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic;
 using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.Stats;
@@ -85,6 +86,17 @@ public partial class DebugHud : CanvasLayer
             sb.Append('\n');
             AppendResource(sb, "Player HP ", playerStats, StatType.Health);
             AppendResource(sb, "Player STA", playerStats, StatType.Stamina);
+            AppendResource(sb, "Player MP ", playerStats, StatType.Mana);
+
+            if (_player.TryGetComponent(out SpellcastingComponent spells))
+            {
+                AppendSpell(sb, spells, playerStats);
+            }
+
+            if (_player.TryGetComponent(out StatusEffectsComponent playerEffects))
+            {
+                AppendEffects(sb, playerEffects);
+            }
 
             if (_player.TryGetComponent(out ProgressionComponent prog))
             {
@@ -108,10 +120,15 @@ public partial class DebugHud : CanvasLayer
             sb.Append($"ARM {stats.GetValue(StatType.Armor):0}\n");
             sb.Append(stats.IsAlive ? "Status: ALIVE" : "Status: DEAD");
             sb.Append('\n');
+
+            if (_target.TryGetComponent(out StatusEffectsComponent targetEffects))
+            {
+                AppendEffects(sb, targetEffects);
+            }
         }
 
         sb.Append($"\nLast hit: {_lastHit}\n");
-        sb.Append("\nWASD move | Mouse look | LMB attack | RMB block\nE interact | I character | J journal | [H] heal | [R] respawn | [X] +XP\n[F5/F9] save/load | [Esc] pause");
+        sb.Append("\nWASD move | Mouse look | LMB attack | RMB block | Q cast | F cycle spell\nE interact | I character | J journal | [H] heal | [R] respawn | [X] +XP\n[F5/F9] save/load | [Esc] pause");
         _label.Text = sb.ToString();
     }
 
@@ -139,6 +156,37 @@ public partial class DebugHud : CanvasLayer
 
             return; // Track only the first active quest in the HUD.
         }
+    }
+
+    private static void AppendSpell(StringBuilder sb, SpellcastingComponent spells, StatsComponent stats)
+    {
+        SpellResource? spell = spells.Selected;
+        if (spell == null)
+        {
+            return;
+        }
+
+        float cooldown = spells.CooldownOf(spell);
+        string state = cooldown > 0f
+            ? $"CD {cooldown:0.0}s"
+            : stats.GetCurrent(StatType.Mana) >= spell.ManaCost ? "READY" : "no mana";
+        sb.Append($"Spell: {spell.DisplayName} ({spell.ManaCost:0} MP) — {state}\n");
+    }
+
+    private static void AppendEffects(StringBuilder sb, StatusEffectsComponent effects)
+    {
+        if (effects.ActiveEffects.Count == 0)
+        {
+            return;
+        }
+
+        sb.Append("Effects:");
+        foreach (StatusEffect effect in effects.ActiveEffects)
+        {
+            sb.Append($" {effect.Definition.DisplayName} ({effect.Remaining:0.0}s)");
+        }
+
+        sb.Append('\n');
     }
 
     private static void AppendResource(StringBuilder sb, string label, StatsComponent stats, StatType type)

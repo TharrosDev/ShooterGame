@@ -8,6 +8,7 @@ using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Loot;
+using Embervale.Magic;
 using Embervale.Npc;
 using Embervale.Player;
 using Embervale.Progression;
@@ -50,7 +51,7 @@ public partial class GameBootstrap : Node3D
 
     public override void _Ready()
     {
-        Log.Info("=== Embervale bootstrapping (Phase 2: Player Controller) ===");
+        Log.Info("=== Embervale bootstrapping (Phase 12: Magic System) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
         // processing input even while the tree is paused (to unpause).
@@ -63,6 +64,8 @@ public partial class GameBootstrap : Node3D
         QuestDatabase.Initialize();
         DialogueDatabase.Initialize();
         ScheduleDatabase.Initialize();
+        StatusEffectDatabase.Initialize();
+        SpellDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -88,7 +91,7 @@ public partial class GameBootstrap : Node3D
         SpawnQuestGiver();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, E interact, I inventory. Goblins roam to the north.");
+        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, Q cast, F cycle spell, E interact, I inventory. Goblins roam to the north.");
     }
 
     public override void _ExitTree()
@@ -193,6 +196,9 @@ public partial class GameBootstrap : Node3D
 
         // Team 2: an independent target both the player and enemies can strike.
         dummy.AddChild(new CombatComponent { Name = "Combat", Team = 2 });
+
+        // So spell DoTs/slows can be observed landing on the practice target.
+        dummy.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
 
         var mesh = new MeshInstance3D
         {
