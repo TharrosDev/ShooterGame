@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" load_steps=4 format=3 uid="uid://cmbrvlrcppotion"]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+[sub_resource type="Resource" id="Ing_herb"]
+script = ExtResource("2_ing")
+ItemId = "item.material.healing_herb"
+Quantity = 2
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.health_potion"
+DisplayName = "Brew Health Potion"
+Description = "Distil healing herbs into a restorative draught."
+Station = 3
+Ingredients = Array[Resource]([SubResource("Ing_herb")])
+OutputItemId = "item.potion.health"
+OutputQuantity = 1
+OutputRarity = 0

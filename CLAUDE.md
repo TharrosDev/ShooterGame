@@ -95,7 +95,8 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── spells/             # SpellResource presets (firebolt, fireball, …)
 │   ├── status_effects/     # StatusEffectResource presets (burning, chill, ward)
 │   ├── weather/            # WeatherResource presets (clear, rain, storm, fog, …)
-│   └── encounters/         # EncounterResource presets (patrols, warbands)
+│   ├── encounters/         # EncounterResource presets (patrols, warbands)
+│   └── recipes/            # CraftingRecipeResource presets (ingot, sword, potion, …)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -116,6 +117,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── World/               # WorldClock, day/night sky, weather, encounters
     ├── Npc/                 # NPC schedule resources, ScheduleComponent (routines)
     ├── Magic/               # Spells, projectiles, AoE bursts, status effects
+    ├── Crafting/            # Recipes, stations, CraftingComponent
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
@@ -520,9 +522,29 @@ persists). Three pieces:
   cadence scaled by phase (night) and weather (storm), capped by `MaxConcurrent` and tracked
   via `TreeExited`, reusing `EnemyFactory`. Publishes `EncounterTriggeredEvent`. **Not
   persisted** (emergent/transient, like `EnemySpawnDirector`). The richer *named world-event*
-  framework is Phase 16 — keep these lightweight.
+  framework is Phase 17 — keep these lightweight.
 - Events live in `src/World/WorldEvents.cs` (`TimeOfDayChangedEvent` + the two above). The HUD
   shows the current weather beside the clock.
+
+### 6.6i Crafting (`src/Crafting`)
+
+- **Recipe content** — `CraftingRecipeResource` (`[GlobalClass]`, `data/recipes/*.tres`): a
+  `Station` (`CraftingStationType` Hand/Forge/Workbench/Alchemy/Cooking — Hand = anywhere), an
+  untyped `Ingredients` array of `RecipeIngredient` sub-resources (item id + qty, read via
+  `IngredientList()` by element cast — same pattern as `LootTable.Entries`), an `OutputItemId`/
+  `OutputQuantity`, and an `OutputRarity`. `RecipeDatabase` indexes them.
+- **`CraftingComponent`** (`EntityComponent`, `ISaveable`, on the player) — the known-recipe set
+  (seeded from `StartingRecipeIds`, learnable via `Learn`), plus `CanCraft`/`Craft`: validates
+  station + ingredients, consumes inputs from the sibling `InventoryComponent`, adds the output.
+  Equippable output with `OutputRarity` > Common rolls affixes via `LootGenerator.RollAffixed`
+  (crafting feeds the same gear pipeline as loot). Known recipes persist (`crafting:{RuntimeId}`).
+- **Stations & UI** — `CraftingStationComponent` (`InteractableComponent`) publishes
+  `CraftingStationOpenedEvent` on `E`; `CraftingStationFactory` builds the world block.
+  `CraftingPanel` (`src/UI`, modal, built through `UiTheme`) lists known recipes matching the
+  station (+ `Hand`), with live have/need ingredient lines and a Craft button; `E` closes it
+  (a `_justOpened` guard stops the opening press from also closing it). Events:
+  `src/Crafting/CraftingEvents.cs`. Sandbox: a forge/workbench/alchemy yard west of spawn; the
+  player knows six recipes forming an ore→ingot→sword chain.
 
 ### 6.7 Save (`src/Save`)
 
@@ -776,6 +798,17 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
    when its day phase is active. (Spawning currently routes through `EnemyFactory`, i.e. the
    goblin archetype, until more enemy factories exist.) No code change.
 
+**A new crafting recipe**
+1. Author `data/recipes/Xxx.tres` (`script_class="CraftingRecipeResource"`): unique `Id`,
+   `Station` (`0`=Hand / `1`=Forge / `2`=Workbench / `3`=Alchemy / `4`=Cooking), an
+   `Ingredients` array of `RecipeIngredient` sub-resources (`ItemId` + `Quantity`, same
+   sub-resource `.tres` pattern as `LootEntry`), `OutputItemId`/`OutputQuantity`, and
+   `OutputRarity` (`0`=Common plain; higher rolls affixes for an equippable output).
+2. Auto-indexed by `RecipeDatabase`. The player learns it by id (seed via
+   `CraftingComponent.StartingRecipeIds` in `PlayerFactory`, or call `Learn`); it then appears
+   at a matching `CraftingStationComponent`. New stations: `CraftingStationFactory.Create(...)`
+   in the bootstrap. No code change for new recipes.
+
 **A new spell**
 1. Author `data/spells/Xxx.tres` (`script_class="SpellResource"`): unique `Id`, `School`
    (a `DamageType`), `Delivery` (`0`=Projectile / `1`=Area / `2`=Self), `ManaCost`,
@@ -852,9 +885,9 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic ·
-13 World Systems · 14 HUD & Panels Polish**. Next: **15 Crafting**.
+13 World Systems · 14 HUD & Panels Polish · 15 Crafting**. Next: **16 Factions**.
 
-Then (in order): 16 Factions · 17 Procedural Events · 18 Game UI Overhaul ·
+Then (in order): 17 Procedural Events · 18 Game UI Overhaul ·
 19 Optimization · 20 Content Expansion.
 
 > **Two UI phases, deliberately:** Phase 14 (done) *polished the existing

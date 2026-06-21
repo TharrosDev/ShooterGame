@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Entities;
 using Embervale.Items;
@@ -89,6 +90,21 @@ public static class PlayerFactory
 
         // Quest log after progression + inventory so it resolves both for rewards.
         player.AddChild(new QuestLogComponent { Name = "QuestLog" });
+
+        // Crafting: knows the starter recipes and consumes/produces through the inventory.
+        player.AddChild(new CraftingComponent
+        {
+            Name = "Crafting",
+            StartingRecipeIds = new Godot.Collections.Array<string>
+            {
+                "recipe.iron_ingot",
+                "recipe.leather_strips",
+                "recipe.health_potion",
+                "recipe.leather_cap",
+                "recipe.steel_sword",
+                "recipe.iron_ring",
+            },
+        });
 
         // Story flags: persistent conversation/world memory read & written by dialogue.
         player.AddChild(new StoryFlagsComponent { Name = "StoryFlags" });

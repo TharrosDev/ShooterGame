@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" load_steps=5 format=3 uid="uid://cmbrvlrcpring"]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+[sub_resource type="Resource" id="Ing_ingot"]
+script = ExtResource("2_ing")
+ItemId = "item.material.iron_ingot"
+Quantity = 2
+
+[sub_resource type="Resource" id="Ing_ruby"]
+script = ExtResource("2_ing")
+ItemId = "item.gem.ruby"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.iron_ring"
+DisplayName = "Cast Iron Ring"
+Description = "Set a ruby into a band of iron."
+Station = 1
+Ingredients = Array[Resource]([SubResource("Ing_ingot"), SubResource("Ing_ruby")])
+OutputItemId = "item.ring.iron"
+OutputQuantity = 1
+OutputRarity = 1

@@ -53,8 +53,8 @@ through save/load.
 | 12 | Magic System         | ✅ Done      | Schools, projectiles, AoE, status effects                   |
 | 13 | World Systems        | ✅ Done      | Day/night, weather, encounters                              |
 | 14 | HUD & Panels Polish  | ✅ Done      | Shared UI theme, vitals bars, crosshair, framed panels      |
-| 15 | Crafting             | ⏳ Next      | Recipes, stations, materials                                |
-| 16 | Faction Systems      | ⬜ Planned   | Reputation, consequences                                    |
+| 15 | Crafting             | ✅ Done      | Recipes, stations, materials                                |
+| 16 | Faction Systems      | ⏳ Next      | Reputation, consequences                                    |
 | 17 | Procedural Events    | ⬜ Planned   | World events, dynamic spawns                                |
 | 18 | Game UI Overhaul     | ⬜ Planned   | Real game UI: HUD, menus, tooltips, scenes over the debug overlay |
 | 19 | Optimization         | ⬜ Ongoing   | Pooling, LOD, streaming                                     |
@@ -338,7 +338,7 @@ Builds the fuller day/night + weather + dynamic-spawn model on top of the Phase 
   via `TreeExited`, reusing `EnemyFactory` and the existing death/loot/XP flow. It publishes
   `EncounterTriggeredEvent`. Emergent and transient (not persisted), like the static camp.
   This is deliberately lightweight; the richer named-**world-event** framework (objectives,
-  rewards) is Phase 16.
+  rewards) is Phase 17.
 - **UI** — the HUD now shows the current weather alongside the clock; the sandbox visibly
   cycles dawn→day→dusk→night with shifting light while weather rolls over and patrols/warbands
   wander in. Time and weather both survive save/load.
@@ -363,3 +363,34 @@ Phase 18), but a real, consistent improvement to what's on screen today.
   theme, accent headers and styled buttons; the character screen gained a **scroll area** so a
   full backpack + perk list never runs off-screen. All existing behaviour (toggles, dirty-flag
   rebuilds, equip/learn/choice wiring, modality) is unchanged.
+
+## Phase 15 — delivered (Crafting)
+
+Turns gathered materials into gear, consumables and intermediates through stations,
+reusing the item/inventory/loot systems rather than inventing a parallel economy.
+
+- **Recipe content** — `CraftingRecipeResource` (`[GlobalClass]`, `data/recipes/*.tres`):
+  a `Station` (`CraftingStationType` Hand/Forge/Workbench/Alchemy/Cooking), an untyped array
+  of `RecipeIngredient` sub-resources (item id + quantity, read by element cast like
+  `LootTable.Entries`), an output item id/quantity, and an `OutputRarity`. `RecipeDatabase`
+  indexes them. New recipe = a `.tres`, no code change.
+- **`CraftingComponent`** (`EntityComponent`, `ISaveable`, on the player) — the recipes it
+  knows (a learnable set seeded from `StartingRecipeIds`), plus `CanCraft`/`Craft`: it
+  validates the station and ingredients, consumes inputs from the sibling
+  `InventoryComponent`, and adds the output. An equippable output with `OutputRarity` above
+  Common rolls affixes via `LootGenerator.RollAffixed`, so **smithing feeds the same gear
+  pipeline as drops**. Known recipes persist through save/load.
+- **Stations** — `CraftingStationComponent` (an `InteractableComponent`) advertises a station
+  type and, on the player's `E` interact, publishes `CraftingStationOpenedEvent`;
+  `CraftingStationFactory` builds the world block + collider. The crafting UI
+  (`CraftingPanel`, modal, built through `UiTheme`) lists the recipes the player knows that
+  match the station (plus `Hand` recipes), each with a live have/need ingredient breakdown
+  and a Craft button enabled only when craftable; `E` closes it.
+- **Events** live in `src/Crafting/CraftingEvents.cs` (`CraftingStation{Opened,Closed}Event`,
+  `ItemCraftedEvent`, `RecipeLearnedEvent`).
+- **Sandbox** — a crafting yard west of spawn (forge, workbench, alchemy table) with material
+  pickups nearby. The player starts knowing six recipes: smelt **Iron Ingot**, tan **Leather
+  Strips**, brew **Health Potion**, stitch **Leather Cap**, forge a (rolled Uncommon) **Steel
+  Sword**, and cast a (rolled Uncommon) **Iron Ring** — a full ore→ingot→sword chain. New
+  materials added: iron ingot, leather strips, healing herb. Known recipes round-trip through
+  save/load.
