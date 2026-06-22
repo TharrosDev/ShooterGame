@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Corruption;
 using Godot;
 
 namespace Embervale.Magic;
@@ -28,6 +29,11 @@ public partial class SpellResource : Resource
     [Export] public DamageType School { get; set; } = DamageType.Fire;
 
     [Export] public SpellDelivery Delivery { get; set; } = SpellDelivery.Projectile;
+
+    /// <summary>Minimum corruption tier the caster must have reached to learn this spell
+    /// (Phase 23H). <see cref="CorruptionTier.Untainted"/> (the default) leaves a spell
+    /// ungated; a higher value marks it a corrupted variant unlocked only by corruption.</summary>
+    [Export] public CorruptionTier MinCorruptionTier { get; set; } = CorruptionTier.Untainted;
 
     [ExportGroup("Costs")]
     [Export] public float ManaCost { get; set; } = 10f;

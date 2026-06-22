@@ -795,7 +795,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 underway — 23A–23G ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 next) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -806,19 +806,21 @@ The ordering is driven by hard dependencies, not preference:
 **Immediate next step:** Phase 22 (Production Bible & Content Pipeline) is **complete**
 (22A–22H: design bible, ID registry, validator well-formedness + reachability + headless
 gate, content templates, analytics spine). **Phase 23 (Corruption)** — the LORE's
-defining mechanic — is underway: **23A–23G are done** — the `CorruptionComponent` core
-(0–100 meter, `CorruptionTier` bands, change/tier events, save/load, wired onto the player),
-its debug surface (a `corruption get/set/add/tier` dev-console command + F3-overlay readout),
-dialogue integration (`CorruptionAtLeast`/`CorruptionBelow` conditions + an `AddCorruption`
-effect, exercised by the Village Elder, who now reacts to a corrupted player), the
-character-screen corruption gauge, the HUD dread vignette (an ash-violet edge vignette in
-`GameHud` that fades in at Ashbound/Embers off `CorruptionTierChangedEvent`), the
-`CorruptionAppearanceController` stub (tints a placeholder player body mesh per tier — ash skin +
-ember glow — the seam Phase 30's real models/VFX plug into), and **23G NPC dread** — corruption
-derives a global negative standing "dread" in `ReputationComponent` (`Effective` = earned − dread),
-so factions read a corrupted player as a lower tier and the existing enemy AI turns on them live
-(reusing the reputation math, no parallel system). Next is **23H** — corrupted ability gating +
-the both-endings eligibility hook.
+defining mechanic — is **complete (23A–23H)**: the `CorruptionComponent` core (0–100 meter,
+`CorruptionTier` bands, change/tier events, save/load, wired onto the player), its debug
+surface (a `corruption` dev-console command + F3-overlay readout), dialogue integration
+(`CorruptionAtLeast`/`CorruptionBelow` conditions + an `AddCorruption` effect, exercised by
+the Village Elder), the character-screen corruption gauge, the HUD dread vignette (an
+ash-violet edge vignette in `GameHud` that fades in at Ashbound/Embers off
+`CorruptionTierChangedEvent`), the `CorruptionAppearanceController` stub (tints a placeholder
+player body mesh per tier — the seam Phase 30's real models/VFX plug into), **23G NPC dread**
+(corruption derives a global negative standing "dread" in `ReputationComponent`, `Effective`
+= earned − dread, so factions read a corrupted player as a lower tier and the enemy AI turns
+on them live), and **23H corrupted abilities + endings hook** (a `MinCorruptionTier` gate on
+`SpellResource`/`PerkResource` learning with one corrupted spell + perk authored, plus
+`CorruptionComponent.EndingEligibility` — `EndingPath` Undecided/Dawnfire/LordOfEmbers,
+pure-derived from the saved meter — the dial Phase 49's endings will read). Next is **Phase 24
+— Meta-Shell & Localization Spine** (title screen, save slots, settings, the i18n string layer).
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four

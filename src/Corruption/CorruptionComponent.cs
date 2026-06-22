@@ -26,6 +26,11 @@ public partial class CorruptionComponent : EntityComponent, ISaveable
     /// <summary>The tier the current value falls into.</summary>
     public CorruptionTier Tier => CorruptionTiers.Of(_value);
 
+    /// <summary>Which ending the current corruption makes the player eligible for (Phase 23H —
+    /// the both-endings dial Phase 49 consumes). Derived from the saved <see cref="Value"/>, so it
+    /// persists for free; no separate save state. See <see cref="CorruptionTiers.EligibilityOf"/>.</summary>
+    public EndingPath EndingEligibility => CorruptionTiers.EligibilityOf(_value);
+
     protected override void OnInitialize()
     {
         SaveManager.Instance?.Register(this);

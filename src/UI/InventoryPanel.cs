@@ -247,7 +247,10 @@ public partial class InventoryPanel : CanvasLayer
             else
             {
                 bool maxed = rank >= perk.MaxRank;
-                AddLine(maxed ? $"• {text}  [maxed]" : $"• {text}");
+                string suffix = maxed ? "  [maxed]"
+                    : !_perks.MeetsCorruption(perk) ? $"  [needs {CorruptionTiers.Label(perk.MinCorruptionTier)}]"
+                    : string.Empty;
+                AddLine($"• {text}{suffix}");
             }
         }
     }

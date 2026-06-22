@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core.Events;
 using Embervale.Core.Pooling;
+using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Save;
 using Embervale.Stats;
@@ -41,6 +42,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     private StatsComponent? _stats;
     private CombatComponent? _combat;
+    private CorruptionComponent? _corruption;
     private int _selected;
 
     // Pooled projectiles: rapid casting reuses bolts instead of churning the scene tree.
@@ -115,10 +117,29 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
     }
 
-    /// <summary>Teaches a new spell at runtime (e.g. from a tome pickup or trainer).</summary>
+    /// <summary>The caster's current corruption tier (Untainted when it has no
+    /// <see cref="CorruptionComponent"/>). Resolved from the sibling on demand so it is
+    /// always current — mirrors how <c>ReputationComponent</c> reads corruption.</summary>
+    private CorruptionTier CorruptionTierNow =>
+        (_corruption ??= Entity?.GetComponent<CorruptionComponent>())?.Tier ?? CorruptionTier.Untainted;
+
+    /// <summary>Whether the caster is corrupted enough to learn the spell (Phase 23H gate).</summary>
+    public bool MeetsCorruption(SpellResource spell) => CorruptionTierNow >= spell.MinCorruptionTier;
+
+    /// <summary>Whether the spell is unknown, exists, and its corruption gate is met.</summary>
+    public bool CanLearn(SpellResource spell) =>
+        !_spells.Exists(s => s.Id == spell.Id) && MeetsCorruption(spell);
+
+    /// <summary>Teaches a new spell at runtime (e.g. from a tome pickup or trainer). A spell
+    /// gated above the caster's corruption tier (Phase 23H) is refused.</summary>
     public void Learn(string spellId)
     {
         if (_spells.Exists(s => s.Id == spellId) || SpellDatabase.Get(spellId) is not { } spell)
+        {
+            return;
+        }
+
+        if (!MeetsCorruption(spell))
         {
             return;
         }

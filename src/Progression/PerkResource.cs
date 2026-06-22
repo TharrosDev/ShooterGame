@@ -1,3 +1,4 @@
+using Embervale.Corruption;
 using Embervale.Stats;
 using Godot;
 
@@ -34,6 +35,11 @@ public partial class PerkResource : Resource
     [Export] public StatType Stat { get; set; } = StatType.Health;
     [Export] public ModifierType ModifierType { get; set; } = ModifierType.Flat;
     [Export] public float ValuePerRank { get; set; } = 1f;
+
+    /// <summary>Minimum corruption tier required to learn this perk (Phase 23H).
+    /// <see cref="CorruptionTier.Untainted"/> (the default) leaves a perk ungated; a higher
+    /// value marks it a corrupted passive unlocked only by corruption.</summary>
+    [Export] public CorruptionTier MinCorruptionTier { get; set; } = CorruptionTier.Untainted;
 
     /// <summary>The cumulative bonus value granted at the given rank.</summary>
     public float ValueAtRank(int rank) => ValuePerRank * rank;

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Embervale.Core.Events;
+using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Save;
 using Embervale.Stats;
@@ -21,6 +22,7 @@ public partial class PerksComponent : EntityComponent, ISaveable
 
     private ProgressionComponent? _progression;
     private StatsComponent? _stats;
+    private CorruptionComponent? _corruption;
 
     public string SaveId => SaveKey("perks");
 
@@ -38,7 +40,17 @@ public partial class PerksComponent : EntityComponent, ISaveable
 
     public int RankOf(string perkId) => _ranks.TryGetValue(perkId, out int rank) ? rank : 0;
 
-    /// <summary>True if the perk has ranks left and the owner can afford the next one.</summary>
+    /// <summary>The owner's current corruption tier (Untainted when it has no
+    /// <see cref="CorruptionComponent"/>). Resolved from the sibling on demand so it is
+    /// always current — mirrors how <c>ReputationComponent</c> reads corruption.</summary>
+    private CorruptionTier CorruptionTierNow =>
+        (_corruption ??= Entity?.GetComponent<CorruptionComponent>())?.Tier ?? CorruptionTier.Untainted;
+
+    /// <summary>Whether the owner is corrupted enough to learn the perk (Phase 23H gate).</summary>
+    public bool MeetsCorruption(PerkResource perk) => CorruptionTierNow >= perk.MinCorruptionTier;
+
+    /// <summary>True if the perk has ranks left, the owner can afford the next one, and its
+    /// corruption gate is met.</summary>
     public bool CanLearn(PerkResource perk)
     {
         if (perk == null || _progression == null)
@@ -46,7 +58,9 @@ public partial class PerksComponent : EntityComponent, ISaveable
             return false;
         }
 
-        return RankOf(perk.Id) < perk.MaxRank && _progression.SkillPoints >= perk.Cost;
+        return RankOf(perk.Id) < perk.MaxRank
+            && _progression.SkillPoints >= perk.Cost
+            && MeetsCorruption(perk);
     }
 
     /// <summary>Buys the next rank of a perk. Returns false if maxed or unaffordable.</summary>
@@ -58,7 +72,7 @@ public partial class PerksComponent : EntityComponent, ISaveable
         }
 
         int rank = RankOf(perk.Id);
-        if (rank >= perk.MaxRank)
+        if (rank >= perk.MaxRank || !MeetsCorruption(perk))
         {
             return false;
         }

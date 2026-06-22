@@ -234,7 +234,7 @@ no code) — batch them when momentum is good.
     (a "Dread −N" line + effective tiers), the F3 debug HUD, and the `corruption`
     dev-console command.
 
-- [ ] **23H — Corrupted ability gating + both-endings eligibility hook** `[F/C]`
+- [x] **23H — Corrupted ability gating + both-endings eligibility hook** `[F/C]` ✅
   - **Goal:** corruption unlocks corrupted variants and feeds the endings dial.
   - **Tasks:** add a corruption-tier gate option to `SpellResource`/`PerkResource`
     consumption (author one corrupted spell + one corrupted perk `.tres` gated by
@@ -243,6 +243,16 @@ no code) — batch them when momentum is good.
     threshold) that Phase 49 will consume. Document the contract.
   - **Done when:** a tier-gated spell/perk is learnable only above its tier; an
     ending-eligibility value is queryable and saved.
+  - **Done:** `SpellResource`/`PerkResource` gained a `MinCorruptionTier` export
+    (default `Untainted`, so existing content is ungated). `SpellcastingComponent.Learn`
+    and `PerksComponent.CanLearn`/`Learn` resolve the sibling `CorruptionComponent`
+    (the 23G lazy pattern) and refuse content above the player's tier. Authored
+    `data/spells/EmberSiphon.tres` + `data/perks/AshbornMight.tres`, both gated at
+    Marked; the perk shows `[needs Marked]` in the character screen until then, and a
+    `learn <id>` dev command verifies the spell gate. `CorruptionComponent.EndingEligibility`
+    (`EndingPath` Undecided/Dawnfire/LordOfEmbers) is pure-derived from the saved meter
+    via `CorruptionTiers.EligibilityOf` (Dawnfire <40, LordOfEmbers ≥60), unit-tested and
+    surfaced in the `corruption` console output. Phase 23 (Corruption) is now complete.
 
 ---
 
