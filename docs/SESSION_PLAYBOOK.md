@@ -575,6 +575,69 @@ no code) — batch them when momentum is good.
 
 ---
 
+## Phase 29.5 — Spellcraft & the Fading Weave `[F]`
+
+> Magic made deep + original. Phase 12 built the *system*; this gives it identity and
+> depth so magic is a real build spine for the slice (DESIGN §1.5). All new *mechanics*
+> land here, before the G2 freeze; breadth/content is woven through 26/34/35/42/47–48/51.
+> Theme: magic is the fading **Weave** of a dying world — recover lost spellcraft, and
+> corruption is the darker shortcut (extends 23H). Read `src/Magic/` first.
+
+- [ ] **29.5A — Cast archetypes: Charged + Channeled** `[F]`
+  - **Goal:** casts have feel beyond fire-and-forget.
+  - **Tasks:** add a `CastMode` (Instant · Charged · Channeled) to `SpellResource`
+    (append-only enum), layered on the existing Projectile/Area/Self *shape*; give
+    `SpellcastingComponent` charge build-up (power/radius scale with hold) and channel
+    (sustained tick at a mana-per-second cost, interruptible). Drive from the player
+    controller. Persists nothing new (transient cast state).
+  - **Done when:** one charged and one channeled spell cast and feel distinct from instant;
+    mana drains correctly; round-trips (known spells already save).
+- [ ] **29.5B — School identities + status effects** `[F/C]`
+  - **Goal:** each `DamageType` school plays differently, not just tint+resist.
+  - **Tasks:** author the signature mechanic + status effects per school — Fire ignite/DoT
+    stacks, Frost chill→freeze, Lightning chain-to-nearby, Arcane ward/dispel, Nature
+    heal-over-time/totem, Necrotic lifesteal/decay (corruption-gated per 23H). Mostly new
+    `StatusEffectResource` `.tres` + small resolver hooks (CLAUDE.md §8).
+  - **Done when:** every school has a distinct on-hit behavior provable in the sandbox.
+- [ ] **29.5C — Spell scaling + school mastery track** `[F]`
+  - **Goal:** "hard to master" magic ceiling that isn't just bigger numbers.
+  - **Tasks:** extend `CombatMath.RollSpell` scaling off SpellPower/Intelligence; add a
+    per-school **mastery** that ranks by casting that school and empowers/unlocks its
+    spells (reuse perk/progression patterns; `ISaveable`). New `MasteryComponent` or fold
+    into progression.
+  - **Done when:** casting a school raises its mastery, which measurably empowers it;
+    mastery round-trips through save/load.
+- [ ] **29.5D — Reactive spell combos** `[F]`
+  - **Goal:** cross-school reads, the magic analogue of the combat read.
+  - **Tasks:** a small `SpellCombo` resolver that inspects the target's
+    `StatusEffectsComponent` on hit and fires a bonus effect (Chill + Lightning = shatter,
+    etc.), data-described where possible.
+  - **Done when:** at least two combos trigger and are documented; no hard-coded one-offs.
+- [ ] **29.5E — The fading Weave (region potency + spell recovery)** `[F]`
+  - **Goal:** the dying-world magic identity, mechanical.
+  - **Tasks:** a light, dev-tunable per-region **magic-potency** dial (ties to Phase 25
+    streaming) feeding cast cost/power; spells are *recovered* (tome/teacher), not vendored
+    — a `Learn`/recovery seam reusing the 23H learn path; corrupted casting eases as potency
+    falls. A `weave` dev-console command to inspect/tune.
+  - **Done when:** potency visibly shifts cast power in two regions; a recovered spell is
+    learnable via the recovery path; saved.
+- [ ] **29.5F — Enemy & NPC caster AI** `[F]`
+  - **Goal:** the world casts back (the sandbox has zero enemy magic today).
+  - **Tasks:** a casting behavior in `EnemyAIComponent` (cast at range, kite to keep
+    distance, heal/buff allies) reusing `SpellcastingComponent` on enemies; one caster
+    archetype factory (a Valari mage / cultist) with a `.tres` spell loadout.
+  - **Done when:** an enemy caster engages with spells, kites, and is beatable; reuses the
+    player casting path, no parallel system.
+- [ ] **29.5G — Magic UI + one signature spell per school (slice content)** `[F/C]`
+  - **Goal:** the slice shows magic as a real, legible spine.
+  - **Tasks:** a spellbook/school view with charge/channel/mastery feedback through
+    `UiTheme` (functional; beautified in 30.5); author one signature spell per school for
+    the slice (full catalogue is Phase 51).
+  - **Done when:** the player can browse schools, see mastery/charge, and cast a signature
+    spell from each school; content validates.
+
+---
+
 ## Phase 30 — Animation, Models & Visual Identity `[P]`
 
 > Art-heavy; the human supplies assets. Each sub-phase integrates one asset class
