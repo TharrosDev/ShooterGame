@@ -1,4 +1,5 @@
 using Embervale.Core;
+using Embervale.Save;
 using Godot;
 
 namespace Embervale.UI;
@@ -6,15 +7,18 @@ namespace Embervale.UI;
 /// <summary>
 /// The title / main menu (Phase 24A): the first thing shown on launch, before any world is
 /// built. <see cref="GameBootstrap"/> boots into <see cref="GameState.MainMenu"/> and shows this
-/// instead of constructing the sandbox; <b>New Game</b> invokes <see cref="NewGameRequested"/>
-/// (the bootstrap's deferred build path) and <b>Quit</b> exits. Continue / Load / Settings are
-/// present but disabled — they light up in 24B–24F as the save-slot and settings systems land.
-/// Built in code through <see cref="UiTheme"/>, mirroring <see cref="PauseMenu"/>.
+/// instead of constructing the sandbox. <b>New Game</b> and <b>Load Game</b> open the
+/// <see cref="SaveSlotPanel"/> to pick a slot (24C), <b>Continue</b> resumes the most-recent save,
+/// and <b>Quit</b> exits. Settings remains a disabled stub until 24E–24F. Built in code through
+/// <see cref="UiTheme"/>, mirroring <see cref="PauseMenu"/>.
 /// </summary>
 public partial class MainMenu : CanvasLayer
 {
-    /// <summary>Invoked when the player chooses New Game; the bootstrap builds the world.</summary>
-    public System.Action? NewGameRequested { get; set; }
+    /// <summary>Invoked with the chosen slot when the player starts a new game.</summary>
+    public System.Action<string>? NewGameRequested { get; set; }
+
+    /// <summary>Invoked with the chosen slot when the player loads/continues a save.</summary>
+    public System.Action<string>? LoadGameRequested { get; set; }
 
     public override void _Ready()
     {
@@ -57,12 +61,49 @@ public partial class MainMenu : CanvasLayer
 
         col.AddChild(new HSeparator());
 
-        col.AddChild(MenuButton("New Game", () => NewGameRequested?.Invoke()));
-        // Disabled stubs — the save-slot flow (24B–24C) and settings (24E–24F) light these up.
-        col.AddChild(MenuButton("Continue", null));
-        col.AddChild(MenuButton("Load Game", null));
+        bool hasSaves = (SaveManager.Instance?.ListSlots().Count ?? 0) > 0;
+
+        col.AddChild(MenuButton("New Game", () => OpenSlotPanel(SaveSlotPanel.Intent.New)));
+        col.AddChild(MenuButton("Continue", hasSaves ? ContinueMostRecent : null));
+        col.AddChild(MenuButton("Load Game", hasSaves ? () => OpenSlotPanel(SaveSlotPanel.Intent.Load) : null));
+        // Settings is still a stub until 24E–24F.
         col.AddChild(MenuButton("Settings", null));
         col.AddChild(MenuButton("Quit", () => GetTree().Quit()));
+    }
+
+    private void OpenSlotPanel(SaveSlotPanel.Intent mode)
+    {
+        var panel = new SaveSlotPanel();
+        System.Action<string> chosen = mode == SaveSlotPanel.Intent.New
+            ? slot => NewGameRequested?.Invoke(slot)
+            : slot => LoadGameRequested?.Invoke(slot);
+
+        // Hide the menu behind the panel; restore it if the player backs out.
+        Visible = false;
+        panel.Configure(mode, chosen, () => Visible = true);
+        AddChild(panel);
+    }
+
+    private void ContinueMostRecent()
+    {
+        if (SaveManager.Instance is not { } manager)
+        {
+            return;
+        }
+
+        SaveSlotInfo? latest = null;
+        foreach (SaveSlotInfo info in manager.ListSlots())
+        {
+            if (latest == null || info.TimestampUnix > latest.TimestampUnix)
+            {
+                latest = info;
+            }
+        }
+
+        if (latest != null)
+        {
+            LoadGameRequested?.Invoke(latest.Slot);
+        }
     }
 
     private static Button MenuButton(string text, System.Action? onPressed)

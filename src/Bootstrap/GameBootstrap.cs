@@ -98,33 +98,75 @@ public partial class GameBootstrap : Node3D
     /// <summary>Shows the title screen and parks the game in <see cref="GameState.MainMenu"/>.</summary>
     private void ShowMainMenu()
     {
-        _mainMenu = new MainMenu { NewGameRequested = StartNewGame };
+        _mainMenu = new MainMenu
+        {
+            NewGameRequested = StartNewGame,
+            LoadGameRequested = StartLoadedGame,
+        };
         AddChild(_mainMenu);
         GameManager.Instance?.ChangeState(GameState.MainMenu);
         Log.Info("Main menu ready. New Game to enter the world.");
     }
 
-    /// <summary>Builds the playable sandbox and enters <see cref="GameState.Playing"/>. Invoked by
-    /// the main menu's New Game; this is the original boot path, now deferred behind the menu.</summary>
-    private void StartNewGame()
+    /// <summary>Starts a fresh game into <paramref name="slot"/> (Phase 24C): builds the world and
+    /// enters <see cref="GameState.Playing"/> with a clean playtime. Invoked by the slot browser.</summary>
+    private void StartNewGame(string slot)
+    {
+        if (!BeginSession(slot))
+        {
+            return;
+        }
+
+        SaveManager.Instance?.ResetPlaytime();
+        BuildWorld();
+        GameManager.Instance?.ChangeState(GameState.Playing);
+        Log.Info($"New game started in slot '{slot}'. Sandbox ready (WASD move, LMB attack, E interact, I inventory).");
+    }
+
+    /// <summary>Loads an existing save into a freshly-built world (Phase 24C): builds the sandbox,
+    /// then overlays the slot's saved state onto the registered saveables (the F9 path right after a
+    /// fresh build), continuing that save's playtime.</summary>
+    private void StartLoadedGame(string slot)
+    {
+        if (!BeginSession(slot))
+        {
+            return;
+        }
+
+        BuildWorld();
+        SaveManager.Instance?.LoadGame(slot);
+        GameManager.Instance?.ChangeState(GameState.Playing);
+        Log.Info($"Loaded game from slot '{slot}'. Sandbox ready.");
+    }
+
+    /// <summary>Common entry for the New/Load paths: guards single-build, tears down the menu, makes
+    /// the chosen slot active, and wires the save-header provider. Returns false if already built.</summary>
+    private bool BeginSession(string slot)
     {
         if (_sandboxBuilt)
         {
-            return;
+            return false;
         }
 
         _sandboxBuilt = true;
         _mainMenu?.QueueFree();
         _mainMenu = null;
 
-        // Fresh game → fresh playtime, and teach the SaveManager how to stamp save headers
-        // (Phase 24B) from live gameplay state without coupling it to gameplay types.
-        SaveManager.Instance?.ResetPlaytime();
         if (SaveManager.Instance != null)
         {
+            // Subsequent quick/manual saves target this slot, and headers are stamped from live
+            // gameplay state via the provider (Phase 24B) without coupling the manager to gameplay.
+            SaveManager.Instance.ActiveSlot = slot;
             SaveManager.Instance.HeaderProvider = BuildSaveHeader;
         }
 
+        return true;
+    }
+
+    /// <summary>Assembles the playable sandbox (no state transition). Shared by the New and Load
+    /// session paths.</summary>
+    private void BuildWorld()
+    {
         BuildEnvironment();
 
         // The purpose-built game HUD is the default overlay; the DebugHud is now a
@@ -190,9 +232,6 @@ public partial class GameBootstrap : Node3D
         SpawnCraftingStations();
         SpawnEncounterDirector();
         SpawnPersistentActors();
-
-        GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, Q cast, F cycle spell, E interact/craft, I inventory. Stations sit west of spawn.");
     }
 
     public override void _ExitTree()
@@ -257,10 +296,10 @@ public partial class GameBootstrap : Node3D
                 AdjustGoblinReputation();
                 break;
             case Key.F5:
-                SaveManager.Instance?.SaveGame("quick");
+                if (SaveManager.Instance is { } saver) { saver.SaveGame(saver.ActiveSlot); }
                 break;
             case Key.F9:
-                SaveManager.Instance?.LoadGame("quick");
+                if (SaveManager.Instance is { } loader) { loader.LoadGame(loader.ActiveSlot); }
                 break;
             case Key.F1:
                 _console.Toggle();

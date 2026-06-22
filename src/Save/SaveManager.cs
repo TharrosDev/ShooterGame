@@ -36,6 +36,10 @@ public sealed partial class SaveManager : Node
     /// </summary>
     public Func<Godot.Collections.Dictionary>? HeaderProvider { get; set; }
 
+    /// <summary>The slot that quick/manual saves (F5/F9, pause menu) target. Set to a chosen slot
+    /// when a game is started or loaded from the slot browser (Phase 24C); defaults to <c>quick</c>.</summary>
+    public string ActiveSlot { get; set; } = "quick";
+
     // Accumulated in-world play time for the active save; ticked while Playing, persisted in the
     // header and restored on load so it continues per-slot.
     private double _playtimeSeconds;
@@ -116,6 +120,9 @@ public sealed partial class SaveManager : Node
     private static string SlotHeaderPath(string slot) => $"{SlotDir(slot)}/header.json";
     private static string LegacySlotPath(string slot) => $"{SaveDirectory}/{slot}.json";
 
+    /// <summary>The slot's screenshot thumbnail path (may not exist), for the slot browser.</summary>
+    public string ScreenshotPath(string slot) => $"{SlotDir(slot)}/screenshot.png";
+
     /// <summary>The full-save file path for a slot (the new directory layout).</summary>
     public string SlotPath(string slot) => SlotSavePath(slot);
 
@@ -175,6 +182,8 @@ public sealed partial class SaveManager : Node
             Log.Warn($"Saved slot '{slot}' but could not write its header.json mirror.");
         }
 
+        CaptureScreenshot(slot);
+
         // One-time migration: once the directory layout holds the save, drop the legacy flat file.
         string legacy = LegacySlotPath(slot);
         if (FileAccess.FileExists(legacy))
@@ -211,6 +220,31 @@ public sealed partial class SaveManager : Node
         }
 
         return true;
+    }
+
+    /// <summary>Grabs a small thumbnail of the current frame for the slot browser (Phase 24C).
+    /// Best-effort: any failure is logged and ignored — a missing thumbnail never breaks a save.</summary>
+    private void CaptureScreenshot(string slot)
+    {
+        try
+        {
+            Image? image = GetViewport()?.GetTexture()?.GetImage();
+            if (image == null)
+            {
+                return;
+            }
+
+            image.Resize(320, 180, Image.Interpolation.Bilinear);
+            Error error = image.SavePng(ScreenshotPath(slot));
+            if (error != Error.Ok)
+            {
+                Log.Warn($"Could not write screenshot for slot '{slot}': {error}.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"Screenshot capture failed for slot '{slot}'; continuing without one: {ex.Message}");
+        }
     }
 
     private SaveSlotInfo BuildHeader(string slot)

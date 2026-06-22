@@ -884,7 +884,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A–24B ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A–24C ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -910,15 +910,16 @@ on them live), and **23H corrupted abilities + endings hook** (a `MinCorruptionT
 `CorruptionComponent.EndingEligibility` — `EndingPath` Undecided/Dawnfire/LordOfEmbers,
 pure-derived from the saved meter — the dial Phase 49's endings will read).
 
-**Phase 24 (Meta-Shell & Localization Spine)** is now underway: **24A–24B are done** — the game
-boots to a `MainMenu` (`GameState.MainMenu`) instead of straight into the sandbox (24A; New Game
-runs the deferred bootstrap path, Quit exits, Continue/Load/Settings are disabled stubs), and the
+**Phase 24 (Meta-Shell & Localization Spine)** is now underway: **24A–24C are done** — the game
+boots to a `MainMenu` (`GameState.MainMenu`) instead of straight into the sandbox (24A); the
 `SaveManager` was refactored from one file per slot to per-slot directories
 (`user://saves/<slot>/{save,header}.json`) with a lightweight header (region/level/playtime/
 corruption tier/timestamp), `ListSlots`/`ReadHeader`/`DeleteSlot`, per-slot playtime, and legacy
-single-file migration (24B). Next is the **save-slot UI (24C)** — the New/Load/Continue/Delete
-browser on those headers — then autosave cadence (24D), settings (24E–24F), and the localization
-spine (24G–24H).
+single-file migration (24B); and the **save-slot UI** (24C) is a `UiTheme` slot browser
+(thumbnail + metadata, New/Load/Delete-with-confirm) wired into the title menu with
+Continue=most-recent, an `ActiveSlot` that quick/manual saves target, and screenshot capture on
+save. Next is **24D** — autosave/quicksave cadence on the slot system — then settings (24E–24F)
+and the localization spine (24G–24H).
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four
