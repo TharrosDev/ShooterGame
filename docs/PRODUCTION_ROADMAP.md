@@ -129,6 +129,7 @@ authoring recipes that turn them into content with no new code, see CLAUDE.md §
 | #  | Phase | Tag | One-liner |
 | -- | ----- | --- | --------- |
 | 29 | Combat Feel & Game Juice | F/P | Hit-stop, camera shake, animation canceling, i-frames, lock-on, feedback layers |
+| 29.5 | Spellcraft & the Fading Weave | F | Magic made deep + original: cast archetypes, school identities, mastery, combos, the fading Weave, enemy casters |
 | 30 | Animation, Models & Visual Identity | P | Rigged characters, weapon/spell VFX, the art direction made real |
 | 30.5 | UI & HUD Overhaul | P/F | Unify + rebuild every UI surface to ship quality: design tokens, HUD, panels, motion, gamepad nav |
 | 31 | Audio Foundations | F/P | Audio bus/mixer, music director, SFX, ambience, the `AudioDirector` |
@@ -301,6 +302,10 @@ Umbral), each with distinct traits.
   (`PlayerFactory` takes a creation profile). Persists in the save header.
 - **Trait wiring** — race traits flow through existing systems (StatModifiers,
   seeded perks, faction standing), not a new inheritance chain (CLAUDE.md §1).
+- **Magic affinity (woven, Phase 29.5)** — the Valari "natural affinity for magic"
+  (and any racial school lean) wires into the 29.5 **mastery/Weave** system: a starting
+  mastery nudge + a Weave-attunement trait, not a class lock (DESIGN §1.5). Data through
+  `RaceResource`, no new system.
 
 ### Phase 27 — First Playable Region: Ember Crown (vertical core) `[C/P]`
 
@@ -352,6 +357,59 @@ this gives it **feel**.
 - **Lock-on / soft target** built out from the existing `FocusedEntity` (Phase
   18) into a real target-lock with switching.
 - Stamina/poise pacing tuned to discourage mashing (extends CombatComponent).
+
+### Phase 29.5 — Spellcraft & the Fading Weave `[F]`
+
+The systems roadmap built a *functional* magic system (Phase 12: projectile/area/self
+spells across the `DamageType` schools, a mana economy, status effects) — but the
+sandbox ships only a handful of generic elemental spells, no enemy casters, and no
+mechanical identity. `DESIGN.md §1.5` **pins magic as a required build spine** ("every
+magic school must be a viable spine to build around, none a trap"), yet nothing in the
+roadmap deepened or expanded it. This phase does — and sits in the slice on purpose
+(mirroring the 30.5 UI overhaul): magic must read as a *real, original* answer to an
+encounter before the slice can claim to "look and play shipped," and **every new mechanic
+must exist before the G2 feature freeze.** The slice ships ~one school deep; the breadth
+(full catalogue, all-faction casters) threads through the woven sub-phases below.
+
+**The original hook — the Weave.** Magic is the failing **Weave** of a dying world
+(LORE: *"magic is fading,"* Nyth the magic-goddess dead, the Valari innately attuned).
+You don't *buy* spells — you **recover lost spellcraft**, and corruption offers an easier,
+darker path to power (extending the Phase 23H gate). This makes magic distinctively
+Embervale's, not generic elemental fare, and binds it to the defining mechanic.
+
+- **Cast archetypes** — a new `CastMode` (Instant · **Charged** hold-to-empower · **Channeled**
+  sustained beam/drain at a mana-per-second cost) layered on top of the existing
+  Projectile/Area/Self *shape* (`SpellResource.Delivery`). `SpellcastingComponent` grows
+  charge/channel state; the player controller and enemy AI both drive it.
+- **School identities** — each `DamageType` school plays *differently*, not just a tint +
+  resistance: **Fire** ignite/DoT stacks · **Frost** chill→freeze control · **Lightning**
+  burst + chain-to-nearby · **Arcane** utility (ward/blink/dispel/force) · **Nature**
+  sustain (heal-over-time, thorns, a totem/summon) · **Necrotic** the corrupted line
+  (lifesteal, decay), gated by corruption per 23H. Mostly authored data + one signature
+  mechanic per school.
+- **Spell scaling & school mastery** — spells scale off `SpellPower`/Intelligence
+  (extends `CombatMath.RollSpell`); casting a school ranks a persistent **mastery track**
+  that empowers and unlocks that school's spells (reuses the perk/progression patterns;
+  `ISaveable`). Mastery is the "hard to master" magic ceiling, not just bigger numbers.
+- **Reactive combos** — cross-school interactions read the target's status effects (Chill +
+  Lightning = shatter; Burning + a Nature bloom = …) via a small `SpellCombo` resolver —
+  the magic analogue of the combat read.
+- **The fading Weave** — a light, dev-tunable **magic-potency** dial per region (ties to the
+  dying-world identity and Phase 25 streaming): ambient magic is weak, altars/ley sites
+  restore it, and lost/ancient spells must be *found*, not vendored. Corruption interplay:
+  corrupted casting grows *easier* as the world dies — temptation made mechanical.
+- **Enemy & NPC casters** — `EnemyAIComponent` gains a **casting behavior** (cast at range,
+  kite to maintain distance, heal/buff allies) reusing `SpellcastingComponent` on enemies,
+  plus a first caster archetype (a Valari-trained mage / cultist). The marquee "enemy magic"
+  the sandbox entirely lacks today.
+- **Magic UI + content tail `[C]`** — a spellbook/school view with charge/channel/mastery
+  feedback (functional here, beautified in 30.5) and **one signature spell authored per
+  school** for the slice (the full catalogue is Phase 51).
+
+> **Why before G2.** Cast archetypes, school identities, mastery, combos, the Weave dial,
+> and caster AI are all *mechanics*. After the G2 feature freeze we only author spells as
+> `.tres` against these systems — so the systems must land now, in the slice, where they
+> are proven as a viable build.
 
 ### Phase 30 — Animation, Models & Visual Identity `[P]`
 
@@ -449,6 +507,11 @@ de-risks the schedule.
   attributes/loot/XP + an AI behavior profile.
 - **AI behavior variety** — ranged, casters, shielded, pack/flanking, fleeing,
   ambush — as tunable `EnemyAIComponent` profiles/behavior data, not one-offs.
+- **Caster roster (woven, Phase 29.5)** — flesh out the 29.5 caster AI into a *roster*
+  of school-themed casters per faction: cultist pyromancers (Fire), Hollow-Queen
+  necromancers (Necrotic), Sylthari nature-shamans (Nature), Iron Syndicate stormcallers
+  (Lightning), Valari battle-mages (Arcane). Each = a `.tres` spell loadout + a caster
+  behavior profile, no new code (the casting mechanic ships in 29.5).
 - A `BestiaryDatabase` + an in-game bestiary (Ash Hunters fantasy) tracking kills/
   lore — content, via existing UI patterns.
 
@@ -462,6 +525,10 @@ A LORE tentpole (Ancient/Wild/Ash dragons) and a marquee feature.
 - **Variants** — Wild (territorial world bosses), Ash (corrupted elite enemies),
   Ancient (intelligent, *speak* via dialogue — quest/lore givers). Optional later:
   Draekyn dragon-blood interactions; mountable dragons are a stretch/post-launch.
+- **Ancient dragons as Weave-keepers (woven, Phase 29.5)** — the intelligent Ancients
+  hold *lost spellcraft*: defeating or earning one's favor **teaches a recovered spell**
+  (the 29.5 Weave-recovery loop), and dragon breath is authored as a 29.5 **channeled**
+  spell with school identity (reusing `SpellResolver`/status), not a bespoke attack.
 - Dragon encounters seed Frostfang Reach and high-end world events.
 
 ### Phase 36 — Boss Framework & Encounter Design `[F]`
@@ -531,6 +598,10 @@ Emberbound) as joinable factions with rank progression and multi-quest arcs.
 - Each guild = a `FactionResource` (Phase 16) + a membership/rank flag chain + a
   questline (Phase 41) + a hub presence + rewards. Mostly **content**; any rank/
   membership UI is small.
+- **Veiled Archive = the spell-recovery questline (woven, Phase 29.5)** — the scholar
+  guild's arc *is* the Weave-recovery loop: hunting lost tomes, ley sites, and Ancient
+  knowledge to restore spellcraft, rewarding recovered spells + mastery. Pure content on
+  the 29.5 systems (quest + dialogue + tome rewards).
 
 ### Phase 43 — Cinematics & Scripted Sequences `[F]`
 
@@ -589,6 +660,12 @@ The mid-game turn (LORE): the history of the Divine Cataclysm, the true nature o
 Morthul/the Ash King, and the revelation that *someone must always sit upon the
 Ash Throne* — the thematic pivot that sets up the endings.
 
+- **The Weave's truth (woven, Phase 29.5)** — Act III is where the *fading Weave* pays
+  off narratively: the death of Nyth (the magic-goddess) as the cause of magic's decline,
+  and the choice between restoring the Weave (Dawnfire) or feeding on its corrupted dregs
+  (Lord of Embers). Story beats gate the highest **recovered/ancient spells** behind this
+  turn. Content on the 29.5 Weave system, feeding the Phase 49 endings.
+
 ### Phase 49 — Main Story, Act IV: The Celestial War + Endings `[C]`
 
 The climax (LORE): assault the ruined Celestial Realm, defeat the **Ashen Knight**
@@ -615,6 +692,12 @@ The full item catalogue: weapons/armor/accessories per tier and realm, the affix
 set families, consumables/materials/recipes, and the **divine relics** (unique
 flamebearer-power items tied to corruption and abilities). Reward placement across
 quests/bosses/dungeons; the loot tables of the whole game authored and curated.
+
+- **The full spell catalogue (woven, Phase 29.5)** — author the *complete* spellbook
+  against the 29.5 systems: every school fleshed to a viable build across tiers, signature
+  charged/channeled spells, the corrupted-magic line, and **spell tomes as loot** + a few
+  **relic spells** (divine-relic-tier). This is the magic content *bulk*, and it lives here
+  because it is data on frozen systems (G2-safe) — no new mechanics, only authoring.
 
 ### Phase 52 — Full Audio & Music Production `[P]`
 
@@ -782,6 +865,12 @@ The ordering is driven by hard dependencies, not preference:
    it lands *after* the art direction (30) and after the individual UI surfaces
    (23–29) exist, so it unifies and beautifies them in one pass rather than
    polishing a moving target — and *before* the slice is assembled (33).
+   **Magic depth (29.5)** sits in the slice for the same reason combat feel (29) does:
+   magic is a *pinned build spine* (DESIGN §1.5), so its mechanics — cast archetypes,
+   school identities, mastery, combos, the Weave, caster AI — must exist and prove out
+   in the slice. Its *breadth* (the full catalogue, all-faction casters, dragon/guild
+   spell-recovery) is then pure content woven through 26, 34, 35, 42, 47–48, 51 against
+   those frozen systems — the magic case of the data-over-code rule.
 6. **Feature-complete (34–45)** front-loads *all* remaining mechanics so the
    content stages (46–55) never block on a missing system. **This is the schedule's
    keystone:** G2 is the promise that nothing left is unknown engineering.
