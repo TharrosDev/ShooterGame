@@ -884,7 +884,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 next) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -908,8 +908,14 @@ player body mesh per tier — the seam Phase 30's real models/VFX plug into), **
 on them live), and **23H corrupted abilities + endings hook** (a `MinCorruptionTier` gate on
 `SpellResource`/`PerkResource` learning with one corrupted spell + perk authored, plus
 `CorruptionComponent.EndingEligibility` — `EndingPath` Undecided/Dawnfire/LordOfEmbers,
-pure-derived from the saved meter — the dial Phase 49's endings will read). Next is **Phase 24
-— Meta-Shell & Localization Spine** (title screen, save slots, settings, the i18n string layer).
+pure-derived from the saved meter — the dial Phase 49's endings will read).
+
+**Phase 24 (Meta-Shell & Localization Spine)** is now underway: **24A is done** — the game
+boots to a `MainMenu` (`GameState.MainMenu`) instead of straight into the sandbox; New Game
+runs the deferred bootstrap path, Quit exits, and Continue/Load/Settings are disabled stubs
+for the sub-phases that follow. Next is **24B** — the `SaveManager` single-file → slot-directory
+refactor (save headers + multiple slots), then the save-slot UI (24C), settings (24E–24F), and
+the localization spine (24G–24H).
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four

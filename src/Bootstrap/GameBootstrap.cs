@@ -61,6 +61,8 @@ public partial class GameBootstrap : Node3D
     private Godot.Environment _environment = null!;
     private Entity? _dummy;
     private PlayerCharacter? _player;
+    private MainMenu? _mainMenu;
+    private bool _sandboxBuilt;
     private double _respawnCountdown = -1d;
 
     public override void _Ready()
@@ -87,6 +89,33 @@ public partial class GameBootstrap : Node3D
         // content cross-references resolve (item/enemy/quest/spell ids). Broken references
         // surface here at boot rather than silently failing mid-playthrough.
         Log.Info(ContentValidator.Run());
+
+        // Phase 24A: boot to the title menu, not straight into the world. The sandbox is built
+        // on New Game (StartNewGame), keeping the existing bootstrap path intact behind it.
+        ShowMainMenu();
+    }
+
+    /// <summary>Shows the title screen and parks the game in <see cref="GameState.MainMenu"/>.</summary>
+    private void ShowMainMenu()
+    {
+        _mainMenu = new MainMenu { NewGameRequested = StartNewGame };
+        AddChild(_mainMenu);
+        GameManager.Instance?.ChangeState(GameState.MainMenu);
+        Log.Info("Main menu ready. New Game to enter the world.");
+    }
+
+    /// <summary>Builds the playable sandbox and enters <see cref="GameState.Playing"/>. Invoked by
+    /// the main menu's New Game; this is the original boot path, now deferred behind the menu.</summary>
+    private void StartNewGame()
+    {
+        if (_sandboxBuilt)
+        {
+            return;
+        }
+
+        _sandboxBuilt = true;
+        _mainMenu?.QueueFree();
+        _mainMenu = null;
 
         BuildEnvironment();
 
@@ -190,6 +219,13 @@ public partial class GameBootstrap : Node3D
 
     public override void _UnhandledKeyInput(InputEvent @event)
     {
+        // The debug/save shortcuts below reach into world objects only created by StartNewGame,
+        // so they do nothing while the title menu is up (Phase 24A).
+        if (!_sandboxBuilt)
+        {
+            return;
+        }
+
         if (@event is not InputEventKey { Pressed: true, Echo: false } key)
         {
             return;
