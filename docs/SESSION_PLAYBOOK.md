@@ -261,7 +261,7 @@ no code) — batch them when momentum is good.
 > The title/menu/settings/save-slot shell the systems roadmap excluded, plus the
 > i18n layer that must land *before* mass content authoring.
 
-- [ ] **24A — `MainMenu` scene + `GameState.MainMenu` boot** `[F]`
+- [x] **24A — `MainMenu` scene + `GameState.MainMenu` boot** `[F]` ✅
   - **Goal:** the game boots to a menu, not straight into the sandbox.
   - **Tasks:** add a `MainMenu` scene (New Game / Continue / Load / Settings /
     Quit, built through `UiTheme`). Make `GameBootstrap`/`GameManager` boot into
@@ -269,6 +269,14 @@ no code) — batch them when momentum is good.
     sandbox reachable (New Game → existing bootstrap path).
   - **Done when:** launching shows the menu; New Game enters the world; Quit exits.
     No save logic yet (buttons can be stubbed/disabled).
+  - **Done:** new `src/UI/MainMenu.cs` (a code-built `CanvasLayer` via `UiTheme`,
+    mirroring `PauseMenu`) — New Game + Quit live, Continue/Load/Settings disabled
+    stubs for 24B–24F. `GameBootstrap._Ready` now inits databases/validates then
+    `ShowMainMenu()` + boots `GameState.MainMenu`; the sandbox build is extracted into
+    `StartNewGame()` (the original path), invoked by New Game, guarded by `_sandboxBuilt`
+    (which also gates the debug/save key shortcuts). Verified: boots to
+    `Boot -> MainMenu` and stops before "Sandbox ready", no errors; build + 58 tests +
+    `--validate` green.
 
 - [ ] **24B — `SaveManager`: single-file → slot directories** `[F]`
   - **Goal:** multiple independent saves.
