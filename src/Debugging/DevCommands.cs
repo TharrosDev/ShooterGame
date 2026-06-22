@@ -6,6 +6,7 @@ using Embervale.Corruption;
 using Embervale.Enemies;
 using Embervale.Factions;
 using Embervale.Items;
+using Embervale.Magic;
 using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Save;
@@ -33,6 +34,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("heal", "heal", "Refill the player's resources.", Heal));
         console.Register(new ConsoleCommand("rep", "rep <factionId> <delta>", "Shift faction standing.", Rep));
         console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
+        console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
 
         console.Register(new ConsoleCommand("time", "time <hour>", "Set the time of day (0–24).", Time));
         console.Register(new ConsoleCommand("weather", "weather <id>", "Force a weather state.", Weather));
@@ -171,7 +173,60 @@ public static class DevCommands
             line += $" — dread -{rep.Dread}";
         }
 
+        line += $" — ending: {corruption.EndingEligibility}";
         return line;
+    }
+
+    private static string Learn(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            return "usage: learn <spellId|perkId>";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player))
+        {
+            return "no player";
+        }
+
+        string id = args[0];
+
+        // A spell: gated by the caster's corruption tier (Phase 23H).
+        if (SpellDatabase.Get(id) is { } spell)
+        {
+            if (player.GetComponent<SpellcastingComponent>() is not { } casting)
+            {
+                return "no spellcasting component";
+            }
+
+            if (!casting.MeetsCorruption(spell))
+            {
+                return $"cannot learn {id}: corruption below {CorruptionTiers.Label(spell.MinCorruptionTier)}";
+            }
+
+            casting.Learn(id);
+            return $"learned spell {spell.DisplayName}";
+        }
+
+        // A perk: gated by corruption tier and skill points.
+        if (PerkDatabase.Get(id) is { } perk)
+        {
+            if (player.GetComponent<PerksComponent>() is not { } perks)
+            {
+                return "no perks component";
+            }
+
+            if (!perks.MeetsCorruption(perk))
+            {
+                return $"cannot learn {id}: corruption below {CorruptionTiers.Label(perk.MinCorruptionTier)}";
+            }
+
+            return perks.Learn(perk)
+                ? $"learned perk {perk.DisplayName} (rank {perks.RankOf(perk.Id)})"
+                : $"cannot learn {id}: maxed or not enough skill points";
+        }
+
+        return $"unknown spell/perk id: {id}";
     }
 
     private static string Time(DevConsole console, string[] args)

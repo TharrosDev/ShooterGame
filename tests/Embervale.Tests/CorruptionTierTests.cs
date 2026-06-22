@@ -38,4 +38,18 @@ public class CorruptionTierTests
             previous = tier;
         }
     }
+
+    [Theory]
+    [InlineData(0, EndingPath.Dawnfire)]
+    [InlineData(39, EndingPath.Dawnfire)]
+    [InlineData(40, EndingPath.Undecided)]
+    [InlineData(59, EndingPath.Undecided)]
+    [InlineData(60, EndingPath.LordOfEmbers)]
+    [InlineData(100, EndingPath.LordOfEmbers)]
+    public void EligibilityOf_MapsValueToEndingPath(int value, EndingPath expected)
+    {
+        // The both-endings dial (Phase 23H): low corruption keeps Dawnfire open, high commits to
+        // Lord of Embers, the band between is Undecided. Phase 49 consumes this.
+        Assert.Equal(expected, CorruptionTiers.EligibilityOf(value));
+    }
 }

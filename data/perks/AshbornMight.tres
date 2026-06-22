@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PerkResource" format=3 uid="uid://ckvejmxnois6t"]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.ashborn_might"
+DisplayName = "Ashborn Might"
+Description = "The corruption answers when called. +3 Spell Power per rank. Only the Marked may take it."
+MaxRank = 3
+Cost = 1
+Stat = 10
+ModifierType = 0
+ValuePerRank = 3.0
+MinCorruptionTier = 2

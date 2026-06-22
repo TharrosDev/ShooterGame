@@ -44,4 +44,29 @@ public static class CorruptionTiers
         CorruptionTier.Ashbound => "Ashbound",
         _ => "Embers",
     };
+
+    /// <summary>Corruption at or above this commits the player to the Lord of Embers path.</summary>
+    public const int LordOfEmbersThreshold = 60;
+
+    /// <summary>Corruption below this keeps the player eligible for the Dawnfire path.</summary>
+    public const int DawnfireThreshold = 40;
+
+    /// <summary>The ending the player's corruption currently makes them eligible for (Phase 23H).
+    /// Low corruption leans <see cref="EndingPath.Dawnfire"/>, high leans
+    /// <see cref="EndingPath.LordOfEmbers"/>, and the band between is
+    /// <see cref="EndingPath.Undecided"/>. Phase 49 consumes this for the final choice.</summary>
+    public static EndingPath EligibilityOf(int value)
+    {
+        if (value >= LordOfEmbersThreshold)
+        {
+            return EndingPath.LordOfEmbers;
+        }
+
+        if (value < DawnfireThreshold)
+        {
+            return EndingPath.Dawnfire;
+        }
+
+        return EndingPath.Undecided;
+    }
 }
