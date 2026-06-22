@@ -300,13 +300,24 @@ no code) — batch them when momentum is good.
     `quick.json` removed, and quick-load restored 19 objects. Build + 58 tests +
     `--validate` green.
 
-- [ ] **24C — Save-slot UI (New/Load/Continue + metadata)** `[F]`
+- [x] **24C — Save-slot UI (New/Load/Continue + metadata)** `[F]` ✅
   - **Goal:** the player manages saves from the shell.
   - **Tasks:** build the slot-select panel (list slots with header metadata +
     screenshot thumbnail; New into empty slot; Load; Delete with confirm). Wire
     Continue = most-recent slot. Capture a screenshot on save for the thumbnail.
   - **Done when:** full new/continue/load/delete flow works from the menu through
     `UiTheme`, round-tripping real saves.
+  - **Done:** new `src/UI/SaveSlotPanel.cs` — a `UiTheme` slot browser (roster
+    slot1–3) showing each filled slot's thumbnail + metadata (region · level · tier ·
+    playtime · date) with New/Overwrite, Load, and Delete (inline confirm), opened by
+    the `MainMenu` in New or Load intent. `MainMenu` Continue/Load are now live
+    (Continue = most-recent slot via `ListSlots`). `SaveManager` gained an `ActiveSlot`
+    (F5/F9 + pause Save/Load target it) and best-effort `screenshot.png` capture on
+    save; `GameBootstrap` split into `BuildWorld()` + slot-aware
+    `StartNewGame(slot)`/`StartLoadedGame(slot)` (load = build world then `LoadGame`).
+    Verified in-engine: Continue built a fresh world and restored the most-recent save
+    (19 objects), pause Save/Load round-tripped, and `saves/quick/screenshot.png` was
+    written. Build + 58 tests + `--validate` green.
 
 - [ ] **24D — Autosave + quicksave + manual cadence** `[F]`
   - **Goal:** robust save cadence on top of slots.

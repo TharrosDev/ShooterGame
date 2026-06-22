@@ -72,8 +72,8 @@ public partial class PauseMenu : CanvasLayer
 		col.AddChild(new HSeparator());
 
 		col.AddChild(MenuButton("Resume", Resume));
-		col.AddChild(MenuButton("Quick Save", () => SaveManager.Instance?.SaveGame("quick")));
-		col.AddChild(MenuButton("Quick Load", () => SaveManager.Instance?.LoadGame("quick")));
+		col.AddChild(MenuButton("Save", () => { if (SaveManager.Instance is { } s) { s.SaveGame(s.ActiveSlot); } }));
+		col.AddChild(MenuButton("Load", () => { if (SaveManager.Instance is { } s) { s.LoadGame(s.ActiveSlot); } }));
 		col.AddChild(MenuButton("Quit to Desktop", () => GetTree().Quit()));
 	}
 
