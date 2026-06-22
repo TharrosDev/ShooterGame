@@ -79,7 +79,7 @@ no code) — batch them when momentum is good.
 > Make authoring fast, safe, and consistent *before* there's a lot of content.
 > Mostly tooling and docs — low engine risk, high leverage.
 
-- [ ] **22A — `docs/DESIGN.md`: combat & moment-to-moment pillars** `[P]`
+- [x] **22A — `docs/DESIGN.md`: combat & moment-to-moment pillars** `[P]`
   - **Goal:** pin the design the LORE leaves open, starting with combat.
   - **Tasks:** create `docs/DESIGN.md`; write the *combat pillars* (Skyrim breadth
     × Elden Ring weight, "no button mashing"), the core moment-to-moment loop
