@@ -33,11 +33,18 @@ public partial class PauseMenu : CanvasLayer
 			return;
 		}
 
+		// While a higher modal (the settings panel) owns the screen it sets UiState.MenuOpen and
+		// consumes Esc to close itself — don't also resume the game on that same press.
+		if (UiState.MenuOpen)
+		{
+			return;
+		}
+
 		if (_open)
 		{
 			Resume();
 		}
-		else if (GameManager.Instance is { IsPlaying: true } && !UiState.MenuOpen)
+		else if (GameManager.Instance is { IsPlaying: true })
 		{
 			Open();
 		}
@@ -74,6 +81,7 @@ public partial class PauseMenu : CanvasLayer
 		col.AddChild(MenuButton("Resume", Resume));
 		col.AddChild(MenuButton("Save", () => { if (SaveManager.Instance is { } s) { s.SaveGame(s.ActiveSlot); } }));
 		col.AddChild(MenuButton("Load", () => { if (SaveManager.Instance is { } s) { s.LoadGame(s.ActiveSlot); } }));
+		col.AddChild(MenuButton("Settings", OpenSettings));
 		col.AddChild(MenuButton("Quit to Desktop", () => GetTree().Quit()));
 	}
 
@@ -84,6 +92,15 @@ public partial class PauseMenu : CanvasLayer
 		button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 		button.Pressed += () => onPressed();
 		return button;
+	}
+
+	private void OpenSettings()
+	{
+		// Hide the pause panel behind the settings overlay; restore it when the player backs out.
+		// The game stays paused throughout, and UiState.MenuOpen (set by the panel) keeps Esc from
+		// resuming until the panel is closed.
+		SetPanelVisible(false);
+		SettingsPanel.Open(this, () => SetPanelVisible(true));
 	}
 
 	private void Open()

@@ -370,13 +370,29 @@ no code) — batch them when momentum is good.
     same `[GlobalClass]` resource mechanism as the whole content pipeline; the explicit save path is
     reachable via the `settings set` console command pending the 24F panel.)
 
-- [ ] **24F — Settings UI panel** `[F]`
+- [x] **24F — Settings UI panel** `[F]` ✅
   - **Goal:** the options menu.
   - **Tasks:** build the Settings panel (tabs/sections for Graphics/Audio/Controls/
     Gameplay/Accessibility) through `UiTheme`, reading/writing `SettingsService`.
     Reachable from both MainMenu and PauseMenu.
   - **Done when:** changing a setting applies live and persists; reachable from
     both shells.
+  - **Done:** new `src/UI/SettingsPanel.cs` — a modal `UiTheme` panel with scrollable
+    Graphics / Audio / Controls / Gameplay / Accessibility sections, each control bound to the live
+    `SettingsService.Current`: window-mode / max-FPS / difficulty dropdowns, V-Sync / invert-Y /
+    reduced-motion / subtitles toggles, and master/music/effects/ambience/interface/voice volume
+    sliders (+ mouse-sensitivity, UI-scale) with live % / value readouts. Changes **apply live**
+    (`SettingsService.Apply` on every change, so volume drags and window mode update instantly) and
+    **persist** on Back, on each discrete toggle/dropdown change, and on a slider's drag-end (so a
+    drag doesn't thrash the file). Reachable from **both shells**: the title `MainMenu` Settings
+    button (now live) and a new `PauseMenu` Settings button both hide themselves and call
+    `SettingsPanel.Open(...)`, restoring on Back. The panel sets `UiState.MenuOpen` + frees the mouse
+    and runs `ProcessMode.Always` (works while paused); `PauseMenu` now suppresses its Esc-resume
+    while a modal is open so Esc backs out of settings instead of resuming. Three reusable builders
+    (`UiTheme.Toggle`/`Slider`/`Dropdown`) were added so the look stays one-file. Verified: build +
+    71 tests + `--validate` green; in-engine boot to the menu with the wired Settings button, no
+    errors. (Interactive open/drag/persist round-trip wasn't driven — the Godot MCP can't inject
+    clicks; the controls are stock Godot widgets on the proven `SettingsService`.)
 
 - [ ] **24G — Localization spine: `Loc` facade + translation pipeline** `[F]`
   - **Goal:** every string goes through a key from here on.
