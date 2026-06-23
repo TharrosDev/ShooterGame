@@ -95,6 +95,54 @@ public static class UiTheme
         return bar;
     }
 
+    /// <summary>A labelled on/off switch (settings rows). Caller wires <c>Toggled</c>.</summary>
+    public static CheckButton Toggle(bool value)
+    {
+        var check = new CheckButton { ButtonPressed = value };
+        check.AddThemeColorOverride("font_color", Text);
+        check.AddThemeColorOverride("font_hover_color", Accent);
+        return check;
+    }
+
+    /// <summary>A horizontal value slider (volumes, sensitivity, UI scale). Caller wires
+    /// <c>ValueChanged</c>/<c>DragEnded</c>.</summary>
+    public static HSlider Slider(double min, double max, double step, double value, float width = 200f)
+    {
+        var slider = new HSlider
+        {
+            MinValue = min,
+            MaxValue = max,
+            Step = step,
+            Value = value,
+            CustomMinimumSize = new Vector2(width, 18f),
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        return slider;
+    }
+
+    /// <summary>An enumerated chooser (window mode, FPS cap, difficulty). Caller wires
+    /// <c>ItemSelected</c>.</summary>
+    public static OptionButton Dropdown(string[] options, int selected)
+    {
+        var option = new OptionButton();
+        option.AddThemeColorOverride("font_color", Text);
+        option.AddThemeColorOverride("font_hover_color", Accent);
+        option.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.16f, 0.18f, 0.23f, 0.95f)));
+        option.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.22f, 0.25f, 0.31f, 0.98f)));
+        option.AddThemeStyleboxOverride("pressed", ButtonStyle(new Color(0.12f, 0.14f, 0.18f, 0.98f)));
+        for (int i = 0; i < options.Length; i++)
+        {
+            option.AddItem(options[i], i);
+        }
+
+        if (selected >= 0 && selected < options.Length)
+        {
+            option.Selected = selected;
+        }
+
+        return option;
+    }
+
     // --- Style boxes --------------------------------------------------------
 
     /// <summary>The framed-panel stylebox (also used by transient widgets like toasts).</summary>

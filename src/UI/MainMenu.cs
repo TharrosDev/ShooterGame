@@ -9,8 +9,8 @@ namespace Embervale.UI;
 /// built. <see cref="GameBootstrap"/> boots into <see cref="GameState.MainMenu"/> and shows this
 /// instead of constructing the sandbox. <b>New Game</b> and <b>Load Game</b> open the
 /// <see cref="SaveSlotPanel"/> to pick a slot (24C), <b>Continue</b> resumes the most-recent save,
-/// and <b>Quit</b> exits. Settings remains a disabled stub until 24E–24F. Built in code through
-/// <see cref="UiTheme"/>, mirroring <see cref="PauseMenu"/>.
+/// and <b>Quit</b> exits. <b>Settings</b> opens the <see cref="SettingsPanel"/> (24F). Built in code
+/// through <see cref="UiTheme"/>, mirroring <see cref="PauseMenu"/>.
 /// </summary>
 public partial class MainMenu : CanvasLayer
 {
@@ -66,8 +66,7 @@ public partial class MainMenu : CanvasLayer
         col.AddChild(MenuButton("New Game", () => OpenSlotPanel(SaveSlotPanel.Intent.New)));
         col.AddChild(MenuButton("Continue", hasSaves ? ContinueMostRecent : null));
         col.AddChild(MenuButton("Load Game", hasSaves ? () => OpenSlotPanel(SaveSlotPanel.Intent.Load) : null));
-        // Settings is still a stub until 24E–24F.
-        col.AddChild(MenuButton("Settings", null));
+        col.AddChild(MenuButton("Settings", OpenSettings));
         col.AddChild(MenuButton("Quit", () => GetTree().Quit()));
     }
 
@@ -82,6 +81,13 @@ public partial class MainMenu : CanvasLayer
         Visible = false;
         panel.Configure(mode, chosen, () => Visible = true);
         AddChild(panel);
+    }
+
+    private void OpenSettings()
+    {
+        // Hide the menu behind the settings panel; restore it when the player backs out.
+        Visible = false;
+        SettingsPanel.Open(this, () => Visible = true);
     }
 
     private void ContinueMostRecent()
