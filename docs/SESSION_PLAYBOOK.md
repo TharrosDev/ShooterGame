@@ -1264,13 +1264,32 @@ no code) — batch them when momentum is good.
     F1 `time <hour>` (8 = stalls, 18 = tavern, 22 = houses) is the maintainer's at-keyboard check —
     the MCP can't drive time/movement; the schedule data + wiring loaded live without errors.
 
-- [ ] **27D — Wilds: encounters, POIs, loot** `[C]`
+- [x] **27D — Wilds: encounters, POIs, loot** `[C]` ✅
   - **Goal:** the explorable surround.
   - **Tasks:** author `EncounterResource`s for the wilds (goblins/wildlife), place
     POIs (a ruin, a cache, a mini-camp) with `LootComponent` droppers and
     interactables. Day-phase-appropriate encounter flags. Pure content.
   - **Done when:** the wilds spawn encounters and reward exploration; loot drops
     and persists.
+  - **Done:** pure content, no code. **Encounters:** two new `EncounterResource`s —
+    `data/encounters/GoblinAmbush.tres` (dusk/night, 2–3) and `GoblinForagers.tres` (dawn/day, 1) —
+    join the existing three (`EncounterDatabase` 3→5); the `EncounterDirector` spawns them around the
+    player by day-phase + weight, and the goblins drop loot via their existing `LootComponent` +
+    `GoblinLoot`. **POIs** authored into the two wilds cells as greybox props (children of the cell
+    root unless they're obstacles, then under `Nav` to carve the navmesh like the rocks) + persistent
+    `ItemPickupComponent` pickups (the proven town_hub-relic pattern: `Entity` + unique `PersistentId`
+    + mesh + collider + pickup, reusing existing items): `wilds_north` got an *old-watchtower ruin*
+    (fallen-pillar prop + IronIngot/RubyGem) and an *abandoned cache* (crate + HealthPotion×2/IronOre×3);
+    `wilds_west` got a *goblin mini-camp* (campfire + two tents + GoblinHide×2/GoldCoin×15/HealingHerb×2).
+    Each pickup carries a unique `PersistentId` so the 25D `CellPersistenceDirector` keeps it looted
+    across unload/reload + save/load. Build clean + **251 tests** + `--validate` exit 0 (encounters'
+    `EnemyTemplateId` + every pickup `Item` resolve); in-engine both wilds cells instance with the POIs,
+    bake navmesh with zero warnings, and the game boots clean (`errors: []`; only a pre-existing WASAPI
+    audio warning). **Known limitations (flagged, deferred):** encounters aren't spatially gated, so
+    they can also spawn near the hub (a region/safe-zone gate is a future [F]); "wildlife" needs a new
+    enemy archetype (code) so 27D uses goblins; POI loot is pickups (no openable-container UI yet).
+    Walking the wilds to fight encounters + collect/persist POI loot is the maintainer's at-keyboard
+    check (the MCP can't drive movement/`E`/combat); the data + wiring loaded live without errors.
 
 - [ ] **27E — Starter quest chain in the Ember Crown** `[C]`
   - **Goal:** a real questline to play.
