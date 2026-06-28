@@ -904,7 +904,7 @@ no code) — batch them when momentum is good.
     curve) and pinned it (curve points, negative-armor clamp, monotonic-and-bounded). Build +
     **144 tests** (6 new) + `--validate` (exit 0) + clean headless boot (`errors: []`) green.
 
-- [ ] **25.5J — Enemy AI, perception & spawning** `[F/P]` (system 4)
+- [x] **25.5J — Enemy AI, perception & spawning** `[F/P]` (system 4) ✅
   - **Goal:** AI is correct and cheap, including across streaming.
   - **Tasks:** perception-FSM transitions (aggro/leash/search/return), the far-sleep /
     perception-cache throttle (`EnemyAIComponent`), `EnemySpawnDirector` density + clean
@@ -912,6 +912,21 @@ no code) — batch them when momentum is good.
     engaged). Read `src/Enemies`.
   - **Done when:** AI transitions are correct with no thrash; far enemies sleep; no
     orphaned/duplicated enemies across cell load/unload; profiled cost is flat.
+  - **Done:** audited the AI — **solid**, with one spawn fix + the perception kernel pinned.
+    *Audit:* the perception FSM transitions cleanly (Idle/Patrol→Combat on sight or provoke,
+    Combat→Investigate on lost LoS, Investigate→Patrol on timeout, Retreat at low health, stand-down
+    when no longer hostile) with no thrash; the far-sleep LOD (`ActiveDistance` 45 m → tick every
+    `SleepInterval`, shadow off) and the perception cache (`PerceptionInterval`-throttled LoS raycast)
+    both work; `OnTeardown` unsubscribes (verified in 25.5H), so an enemy freed by a cell unload or
+    death leaves no orphaned handler — and there's no in-session world rebuild to duplicate it. *Fix:*
+    `EnemySpawnDirector._respawnTimer` started at 0 and was only reset after a spawn, so the **first
+    replacement after a kill popped instantly**; `OnEnemyRemoved` now restarts the respawn clock, so
+    every refill waits the full `RespawnInterval` (consistent density cadence). *Coverage:* extracted
+    the pure `EnemyPerception.InViewCone(forward, toTarget, fov)` kernel (the FOV cone run on every
+    sight tick) from `EnemyAIComponent` and pinned it (dead-ahead/behind/90°, the ±half-FOV boundary,
+    degenerate-vector default-visible). Build + **150 tests** (6 new) + `--validate` (exit 0) + clean
+    headless boot (`errors: []`) green. (A live profile of a crowd's flat cost is the maintainer's
+    F4 check; the throttle/LOD logic is verified by review.)
 
 - [ ] **25.5K — Inventory, equipment & loot generation** `[F]` (systems 5, 6, 7)
   - **Goal:** items move and roll correctly.

@@ -348,14 +348,9 @@ public partial class EnemyAIComponent : EntityComponent
         {
             Vector3 forward = -_body.GlobalTransform.Basis.Z;
             forward.Y = 0f;
-            if (forward.LengthSquared() > 0.0001f)
+            if (!EnemyPerception.InViewCone(forward, flat, FovDegrees))
             {
-                float dot = forward.Normalized().Dot(flat / dist);
-                float cosHalfFov = Mathf.Cos(Mathf.DegToRad(FovDegrees * 0.5f));
-                if (dot < cosHalfFov)
-                {
-                    return false;
-                }
+                return false;
             }
         }
 

@@ -54,6 +54,10 @@ public partial class EnemySpawnDirector : Node3D
     private void OnEnemyRemoved()
     {
         _alive = Mathf.Max(0, _alive - 1);
+
+        // A death starts the respawn clock fresh, so the replacement always waits the full interval —
+        // without this the timer sits at 0 from the initial seed and the first refill pops instantly.
+        _respawnTimer = RespawnInterval;
     }
 
     private Vector3 RandomPoint()
