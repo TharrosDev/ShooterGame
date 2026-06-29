@@ -36,6 +36,15 @@ public partial class DodgeComponent : EntityComponent
         _combat = Entity!.GetComponent<CombatComponent>();
     }
 
+    protected override void OnTeardown()
+    {
+        // Never leave the owner stranded invulnerable if the component is torn down mid-roll.
+        if (_combat != null)
+        {
+            _combat.IsInvulnerable = false;
+        }
+    }
+
     /// <summary>Starts a roll in <paramref name="direction"/> (world-space; falls back to the body's
     /// facing if zero). Returns true if it began.</summary>
     public bool TryDodge(Vector3 direction)
@@ -67,18 +76,22 @@ public partial class DodgeComponent : EntityComponent
         }
 
         _elapsed += (float)delta;
-        if (_combat != null)
-        {
-            _combat.IsInvulnerable = Dodge.IsInvulnerable(_elapsed, IFrameStart, IFrameStart + IFrameDuration);
-        }
 
-        if (_elapsed >= RollDuration)
+        // A stagger landing mid-roll cancels it — i-frames don't persist into a stagger-lock.
+        if (_elapsed >= RollDuration || _combat is { IsStaggered: true })
         {
             _rolling = false;
             if (_combat != null)
             {
                 _combat.IsInvulnerable = false;
             }
+
+            return;
+        }
+
+        if (_combat != null)
+        {
+            _combat.IsInvulnerable = Dodge.IsInvulnerable(_elapsed, IFrameStart, IFrameStart + IFrameDuration);
         }
     }
 }
