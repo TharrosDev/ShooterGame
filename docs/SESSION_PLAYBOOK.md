@@ -1462,9 +1462,20 @@ no code) — batch them when momentum is good.
 
 ## Phase 29 — Combat Feel & Game Juice `[F/P]`
 
-- [ ] **29A — Hit-stop / freeze frames + hit-pause tuning** `[F/P]`
+- [x] **29A — Hit-stop / freeze frames + hit-pause tuning** `[F/P]` ✅
   - **Done when:** landing/taking a heavy hit briefly freezes for weight; tunable;
     off during pause/cutscene.
+  - **Done:** new `HitStopDirector` (`src/Combat/`, `ProcessMode.Always`, bootstrap-created) dips
+    `Engine.TimeScale` to a freeze on `DamageDealtEvent`/`EntityStaggeredEvent`, restored off wall-clock
+    (`Time.GetTicksMsec`) — the 28C slow-mo pattern, scoped to brief per-hit freezes. The window comes
+    from a pure, unit-tested `HitStop.DurationMs(amount, isCrit, isBlocked, staggered)` (light→heavy by
+    damage, +crit, stagger longest, blocked a tick, sub-`MinDamage` = no freeze; a stronger/later hit
+    extends). Guards satisfy "off during pause/cutscene": ignores triggers unless `IsPlaying &&
+    !UiState.MenuOpen` (the boss intro lock raises `UiState`), bails the freeze if it leaves Playing, and
+    won't engage while another time effect owns `TimeScale` (the boss defeat slow-mo) — they never
+    overlap live combat. All knobs are `HitStop` consts. Also centered the inventory panel on-screen.
+    Build clean + 259 tests (+5 HitStop) + `--validate` 0; boot clean. Feel/tuning is the maintainer's
+    at-keyboard pass.
 - [ ] **29B — Camera shake + directional hit reactions** `[F/P]`
   - **Done when:** crits/blocks/stagger shake the camera; hits push reactions in
     the hit direction.
