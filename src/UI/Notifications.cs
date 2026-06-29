@@ -1,4 +1,5 @@
 using Embervale.Core.Events;
+using Embervale.Localization;
 using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.World;
@@ -55,23 +56,27 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
     }
 
-    private void OnLeveledUp(LeveledUpEvent e) => Push($"Level up!  You are now level {e.NewLevel}", UiTheme.Accent);
+    private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
 
-    private void OnQuestStarted(QuestStartedEvent e) => Push($"Quest started:  {e.Quest.Title}", UiTheme.Text);
+    // Quest.Title is a Loc key (data-authored), so it must be resolved before display.
+    private void OnQuestStarted(QuestStartedEvent e) =>
+        Push(Loc.TF("notify.quest_started", Loc.T(e.Quest.Title)), UiTheme.Text);
 
-    private void OnQuestCompleted(QuestCompletedEvent e) => Push($"Quest complete:  {e.Quest.Title}", UiTheme.Good);
+    private void OnQuestCompleted(QuestCompletedEvent e) =>
+        Push(Loc.TF("notify.quest_complete", Loc.T(e.Quest.Title)), UiTheme.Good);
 
-    private void OnWorldEventStarted(WorldEventStartedEvent e) => Push($"★ {e.DisplayName}", UiTheme.Accent);
+    private void OnWorldEventStarted(WorldEventStartedEvent e) => Push(Loc.TF("notify.event_started", e.DisplayName), UiTheme.Accent);
 
     private void OnWorldEventEnded(WorldEventEndedEvent e) =>
-        Push(e.Completed ? $"{e.DisplayName} — resolved!" : $"{e.DisplayName} — failed", e.Completed ? UiTheme.Good : UiTheme.Bad);
+        Push(Loc.TF(e.Completed ? "notify.event_resolved" : "notify.event_failed", e.DisplayName),
+            e.Completed ? UiTheme.Good : UiTheme.Bad);
 
     // Only the autosave cadence (Phase 24D) toasts; manual quicksaves (F5) stay quiet.
     private void OnGameSaved(GameSavedEvent e)
     {
         if (e.IsAutosave)
         {
-            Push("Autosaved", UiTheme.Dim);
+            Push(Loc.T("notify.autosaved"), UiTheme.Dim);
         }
     }
 

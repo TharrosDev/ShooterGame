@@ -253,3 +253,10 @@ dlg.ironking.absorb.absorbed,"Power floods you, hot and total, and somewhere far
 dlg.ironking.absorb.declined,"You turn from it. The fire gutters, unclaimed, and the cold rushes back in to fill the dark."
 dlg.ironking.absorb.c_absorbed_bye,"So be it."
 dlg.ironking.absorb.c_declined_bye,"Not today."
+notify.levelup,Level up!  You are now level {0}
+notify.quest_started,Quest started:  {0}
+notify.quest_complete,Quest complete:  {0}
+notify.event_started,★ {0}
+notify.event_resolved,{0} resolved!
+notify.event_failed,{0} failed
+notify.autosaved,Autosaved
