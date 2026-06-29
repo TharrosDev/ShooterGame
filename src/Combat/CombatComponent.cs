@@ -47,6 +47,11 @@ public partial class CombatComponent : EntityComponent
     [Export]
     public float ParryStaggerDuration { get; set; } = 1.1f;
 
+    /// <summary>Stamina a parry costs. With the one-parry-per-guard-raise latch this stops free
+    /// tap-block parry-spam from dominating the read (DESIGN §1.4).</summary>
+    [Export]
+    public float ParryStaminaCost { get; set; } = 12f;
+
     /// <summary>Fraction of poise damage a (mistimed) block still takes, so a held guard can be broken.</summary>
     [Export]
     public float BlockPoiseFactor { get; set; } = 0.5f;
@@ -56,6 +61,7 @@ public partial class CombatComponent : EntityComponent
     private double _staggerTimer;
     private float _blockElapsed;
     private bool _wasBlocking;
+    private bool _parryConsumed;
 
     /// <summary>Set by a controller (player input / AI) to raise the guard.</summary>
     public bool IsBlocking { get; set; }
@@ -84,8 +90,22 @@ public partial class CombatComponent : EntityComponent
             _poise = Mathf.Min(MaxPoise, _poise + (PoiseRegen * (float)delta));
         }
 
-        // Track time since the guard was raised — the parry window measures from that moment.
-        _blockElapsed = IsBlocking ? (_wasBlocking ? _blockElapsed + (float)delta : 0f) : 0f;
+        // Track time since the guard was raised — the parry window measures from that moment, and each
+        // raise re-arms the single parry (so a held guard can't chain free parries).
+        if (IsBlocking && !_wasBlocking)
+        {
+            _blockElapsed = 0f;
+            _parryConsumed = false;
+        }
+        else if (IsBlocking)
+        {
+            _blockElapsed += (float)delta;
+        }
+        else
+        {
+            _blockElapsed = 0f;
+        }
+
         _wasBlocking = IsBlocking;
     }
 
@@ -121,8 +141,12 @@ public partial class CombatComponent : EntityComponent
         if (IsBlocking)
         {
             // Timed block within the parry window: negate the hit and stagger the attacker (riposte opening).
-            if (Parry.IsParry(_blockElapsed, ParryWindow))
+            // Costs stamina and fires at most once per guard-raise, so tap-block spam can't parry for free.
+            if (Parry.IsParry(_blockElapsed, ParryWindow) && !_parryConsumed
+                && _stats.GetCurrent(StatType.Stamina) >= ParryStaminaCost)
             {
+                _parryConsumed = true;
+                _stats.ModifyCurrent(StatType.Stamina, -ParryStaminaCost);
                 packet.Source?.GetComponent<CombatComponent>()?.Stagger(ParryStaggerDuration);
                 EventBus.Instance?.Publish(new EntityParriedEvent(Entity, packet.Source));
                 return new DamageResult(0f, false, true, packet.Type);
@@ -140,13 +164,18 @@ public partial class CombatComponent : EntityComponent
         float final = CombatMath.Mitigate(amount, packet.Type, _stats);
         _stats.ApplyDamage(final, packet.Source);
 
-        // A block still chips poise (BlockPoiseFactor) so a held guard can be broken into a stagger.
-        _poise -= blocked ? packet.PoiseDamage * BlockPoiseFactor : packet.PoiseDamage;
-        if (_poise <= 0f)
+        // A kill blow doesn't also stagger the corpse — only poise-check a survivor (avoids a
+        // Staggered event firing alongside the Died event on the same hit).
+        if (_stats.IsAlive)
         {
-            _poise = MaxPoise;
-            _staggerTimer = StaggerDuration;
-            EventBus.Instance?.Publish(new EntityStaggeredEvent(Entity));
+            // A block still chips poise (BlockPoiseFactor) so a held guard can be broken into a stagger.
+            _poise -= blocked ? packet.PoiseDamage * BlockPoiseFactor : packet.PoiseDamage;
+            if (_poise <= 0f)
+            {
+                _poise = MaxPoise;
+                _staggerTimer = StaggerDuration;
+                EventBus.Instance?.Publish(new EntityStaggeredEvent(Entity));
+            }
         }
 
         EventBus.Instance?.Publish(
