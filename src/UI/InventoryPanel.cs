@@ -320,7 +320,7 @@ public partial class InventoryPanel : CanvasLayer
 
             if (instance.IsEquippable && _equipment != null)
             {
-                AddRow(text, Loc.T("char.equip"), () => _equipment.Equip(instance), color, instance.Template.Description, instance.TemplateId);
+                AddRow(text, Loc.T("char.equip"), () => _equipment.Equip(instance), color, instance.Template.Description);
             }
             else if (instance.Template is ConsumableItemResource && _inventory != null)
             {

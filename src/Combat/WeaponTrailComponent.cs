@@ -16,7 +16,6 @@ public partial class WeaponTrailComponent : EntityComponent
     /// <summary>Seconds for the slash to fade out.</summary>
     [Export] public float FadeSeconds { get; set; } = 0.18f;
 
-    private MeleeWeaponComponent? _weapon;
     private MeshInstance3D _slash = null!;
     private StandardMaterial3D _material = null!;
     private float _alpha;
@@ -25,8 +24,6 @@ public partial class WeaponTrailComponent : EntityComponent
 
     protected override void OnInitialize()
     {
-        _weapon = Entity!.GetComponent<MeleeWeaponComponent>();
-
         _material = new StandardMaterial3D
         {
             AlbedoColor = new Color(SlashColor.R, SlashColor.G, SlashColor.B, 0f),
@@ -62,13 +59,6 @@ public partial class WeaponTrailComponent : EntityComponent
         }
 
         Vector3 pos = Entity!.Body.GlobalPosition;
-
-        // A bow release isn't a slash — skip the trail, fire its own cue.
-        if (_weapon?.Weapon is { Ranged: true })
-        {
-            EventBus.Instance?.Publish(new SoundCueRequestedEvent("sfx.combat.bow", pos));
-            return;
-        }
 
         _alpha = 1f;
         _slash.Visible = true;

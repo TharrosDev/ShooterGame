@@ -70,21 +70,6 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
         return false;
     }
 
-    /// <summary>The first equipped instance of <paramref name="itemId"/>, or null — lets the hotbar
-    /// re-activate a weapon that's already worn (not in the bag).</summary>
-    public ItemInstance? FirstEquippedInstanceOf(string itemId)
-    {
-        foreach (ItemInstance equipped in _equipped.Values)
-        {
-            if (equipped.TemplateId == itemId)
-            {
-                return equipped;
-            }
-        }
-
-        return null;
-    }
-
     /// <summary>Unequips a specific instance (whichever slot holds it), returning it to the inventory.
     /// Returns true if it was equipped.</summary>
     public bool UnequipInstance(ItemInstance instance)
@@ -115,22 +100,6 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
         }
 
         EquipInternal(instance, equippable.Slot, returnOldToInventory: true);
-        return true;
-    }
-
-    /// <summary>Makes an <b>already-equipped</b> weapon the active one (swaps the
-    /// <see cref="MeleeWeaponComponent"/>'s weapon) without unequipping anything — lets the hotbar
-    /// switch between two equipped weapons (e.g. sword ↔ off-hand bow). Returns false if the instance
-    /// isn't equipped or carries no weapon.</summary>
-    public bool ActivateWeapon(ItemInstance instance)
-    {
-        if (!IsInstanceEquipped(instance) || instance.Equippable?.Weapon is not { } weapon || _weapon == null)
-        {
-            return false;
-        }
-
-        _weapon.Weapon = weapon;
-        NotifyChanged();
         return true;
     }
 
