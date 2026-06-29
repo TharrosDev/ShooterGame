@@ -277,6 +277,11 @@ public sealed partial class SaveManager : Node
         if (HeaderProvider?.Invoke() is { } fields)
         {
             if (fields.TryGetValue("region", out Variant region)) { info.Region = region.AsString(); }
+            if (fields.TryGetValue("region_id", out Variant regionId)) { info.RegionId = regionId.AsString(); }
+            if (fields.TryGetValue("player_x", out Variant px)) { info.PlayerX = (float)px.AsDouble(); info.HasLocation = true; }
+            if (fields.TryGetValue("player_y", out Variant py)) { info.PlayerY = (float)py.AsDouble(); }
+            if (fields.TryGetValue("player_z", out Variant pz)) { info.PlayerZ = (float)pz.AsDouble(); }
+            if (fields.TryGetValue("player_yaw", out Variant yaw)) { info.PlayerYaw = (float)yaw.AsDouble(); }
             if (fields.TryGetValue("level", out Variant level)) { info.Level = level.AsInt32(); }
             if (fields.TryGetValue("corruption_tier", out Variant tier)) { info.CorruptionTier = tier.AsString(); }
         }

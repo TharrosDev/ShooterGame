@@ -24,6 +24,19 @@ public sealed class SaveSlotInfo
 
     public string Region { get; set; } = "Unknown";
 
+    /// <summary>The restorable region <b>id</b> (e.g. "region.ember_crown") — distinct from
+    /// <see cref="Region"/> (the display name). Lets a load return to the region it was saved in.</summary>
+    public string RegionId { get; set; } = string.Empty;
+
+    /// <summary>Saved player world transform, so a load returns the player to where they stood.</summary>
+    public float PlayerX { get; set; }
+    public float PlayerY { get; set; }
+    public float PlayerZ { get; set; }
+    public float PlayerYaw { get; set; }
+
+    /// <summary>True when this header carried a saved player position (a post-Phase-29.5 save).</summary>
+    public bool HasLocation { get; set; }
+
     public int Level { get; set; } = 1;
 
     /// <summary>The player's corruption tier label at save time (e.g. "Marked").</summary>
@@ -41,6 +54,11 @@ public sealed class SaveSlotInfo
         ["timestamp"] = TimestampUnix,
         ["playtime"] = PlaytimeSeconds,
         ["region"] = Region,
+        ["region_id"] = RegionId,
+        ["player_x"] = PlayerX,
+        ["player_y"] = PlayerY,
+        ["player_z"] = PlayerZ,
+        ["player_yaw"] = PlayerYaw,
         ["level"] = Level,
         ["corruption_tier"] = CorruptionTier,
         ["race_id"] = RaceId,
@@ -54,6 +72,11 @@ public sealed class SaveSlotInfo
         if (data.TryGetValue("timestamp", out Variant ts)) { info.TimestampUnix = ts.AsDouble(); }
         if (data.TryGetValue("playtime", out Variant pt)) { info.PlaytimeSeconds = pt.AsDouble(); }
         if (data.TryGetValue("region", out Variant region)) { info.Region = region.AsString(); }
+        if (data.TryGetValue("region_id", out Variant regionId)) { info.RegionId = regionId.AsString(); }
+        if (data.TryGetValue("player_x", out Variant px)) { info.PlayerX = (float)px.AsDouble(); info.HasLocation = true; }
+        if (data.TryGetValue("player_y", out Variant py)) { info.PlayerY = (float)py.AsDouble(); }
+        if (data.TryGetValue("player_z", out Variant pz)) { info.PlayerZ = (float)pz.AsDouble(); }
+        if (data.TryGetValue("player_yaw", out Variant yaw)) { info.PlayerYaw = (float)yaw.AsDouble(); }
         if (data.TryGetValue("level", out Variant level)) { info.Level = level.AsInt32(); }
         if (data.TryGetValue("corruption_tier", out Variant tier)) { info.CorruptionTier = tier.AsString(); }
         if (data.TryGetValue("race_id", out Variant race)) { info.RaceId = race.AsString(); }

@@ -182,6 +182,7 @@ public partial class GameBootstrap : Node3D
         // Restore the saved character before building: the race must be known at spawn (BuildWorld →
         // PlayerFactory.Create) so its stat deltas apply; the innate perks/spells/reputation come back
         // via the LoadGame overlay below, so don't re-grant them here (Phase 26C).
+        SaveSlotInfo? savedLocation = null;
         if (SaveManager.Instance?.ReadHeader(slot) is { } header)
         {
             _activeProfile = CharacterProfile.FromHeaderFields(new Dictionary<string, string>
@@ -189,12 +190,29 @@ public partial class GameBootstrap : Node3D
                 ["race_id"] = header.RaceId,
                 ["char_name"] = header.CharacterName,
             });
+
+            // Restore the saved region BEFORE BuildWorld so the streamer/portals/safe-zone/map all
+            // configure for it; the player transform is applied after the world + load overlay land.
+            if (!string.IsNullOrEmpty(header.RegionId) && RegionDatabase.Get(header.RegionId) != null)
+            {
+                _currentRegionId = header.RegionId;
+            }
+
+            savedLocation = header.HasLocation ? header : null;
         }
 
         _applyStartingGrants = false;
 
         BuildWorld();
         SaveManager.Instance?.LoadGame(slot);
+
+        // Return the player to where they saved (BuildWorld spawned them at the region's start tile).
+        if (savedLocation is { } loc && _player != null)
+        {
+            _player.GlobalPosition = new Vector3(loc.PlayerX, loc.PlayerY, loc.PlayerZ);
+            _player.Rotation = new Vector3(_player.Rotation.X, loc.PlayerYaw, _player.Rotation.Z);
+        }
+
         GameManager.Instance?.ChangeState(GameState.Playing);
         Log.Info($"Loaded game from slot '{slot}' as {_activeProfile.CharacterName} ({_activeProfile.RaceId}). Sandbox ready.");
     }
@@ -987,7 +1005,12 @@ public partial class GameBootstrap : Node3D
     private Godot.Collections.Dictionary BuildSaveHeader()
     {
         string region = RegionDatabase.Get(_currentRegionId)?.DisplayName ?? "Unknown Region";
-        var header = new Godot.Collections.Dictionary { ["region"] = region };
+        // region_id is the restorable id (vs. the display name) so a load returns to the saved region.
+        var header = new Godot.Collections.Dictionary
+        {
+            ["region"] = region,
+            ["region_id"] = _currentRegionId,
+        };
 
         // The chosen race + identity (Phase 26C) so a reload rebuilds the right character.
         foreach (KeyValuePair<string, string> field in _activeProfile.ToHeaderFields())
@@ -1005,6 +1028,13 @@ public partial class GameBootstrap : Node3D
             {
                 header["corruption_tier"] = CorruptionTiers.Label(corruption.Tier);
             }
+
+            // Player world transform, so a load returns the player to where they stood (not the start tile).
+            Vector3 pos = player.GlobalPosition;
+            header["player_x"] = pos.X;
+            header["player_y"] = pos.Y;
+            header["player_z"] = pos.Z;
+            header["player_yaw"] = player.Rotation.Y;
         }
 
         return header;
