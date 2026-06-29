@@ -113,6 +113,7 @@ public static class PlayerFactory
             Name = "Weapon",
             Weapon = weapon,
             Hitbox = hitbox,
+            AimNode = cameraPivot, // ranged weapons (the bow) fire where the player looks
         });
 
         // Equipment sits after inventory + weapon so it can resolve both; the

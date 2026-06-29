@@ -395,6 +395,11 @@ public partial class InventoryPanel : CanvasLayer
                 int slot = n;
                 Button assign = UiTheme.Action((n + 1).ToString());
                 assign.TooltipText = Loc.TF("char.assign_hotbar", n + 1);
+                // Highlight the slot this item is currently keyed to.
+                if (_hotbar.Get(n) == hotbarAssignId)
+                {
+                    assign.Modulate = UiTheme.Accent;
+                }
                 assign.Pressed += () => _hotbar!.Assign(slot, hotbarAssignId);
                 row.AddChild(assign);
             }

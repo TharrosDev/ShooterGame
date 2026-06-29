@@ -29,6 +29,10 @@ public partial class MeleeWeaponComponent : EntityComponent
     /// <summary>The swing volume, injected by the actor's factory/scene.</summary>
     public Hitbox? Hitbox { get; set; }
 
+    /// <summary>Aim source for a ranged weapon (the bow) — the player's camera pivot, so arrows fire
+    /// where they look (pitch included). Falls back to the body's forward when unset.</summary>
+    public Node3D? AimNode { get; set; }
+
     public int ComboIndex { get; private set; }
 
     private StatsComponent? _stats;
@@ -116,7 +120,7 @@ public partial class MeleeWeaponComponent : EntityComponent
 
     private void OpenHitbox()
     {
-        if (Hitbox == null || Weapon == null)
+        if (Weapon == null)
         {
             return;
         }
@@ -126,7 +130,34 @@ public partial class MeleeWeaponComponent : EntityComponent
 
         (float amount, bool isCrit) = CombatMath.RollAttack(baseDamage, _stats);
         var packet = new DamagePacket(amount, Weapon.DamageType, Entity, isCrit, Weapon.PoiseDamage);
-        Hitbox.Activate(packet);
+
+        if (Weapon.Ranged)
+        {
+            FireArrow(packet);
+            return;
+        }
+
+        Hitbox?.Activate(packet);
+    }
+
+    /// <summary>Spawns an arrow flying from the aim point (camera pivot, or body forward) — the ranged
+    /// counterpart to opening the melee hitbox.</summary>
+    private void FireArrow(DamagePacket packet)
+    {
+        Node3D? aim = AimNode ?? Entity?.Body;
+        if (aim == null)
+        {
+            return;
+        }
+
+        Vector3 forward = (-aim.GlobalTransform.Basis.Z).Normalized();
+        Vector3 origin = aim.GlobalPosition + (forward * 0.8f);
+        int team = _combat?.Team ?? 0;
+
+        var arrow = new ArrowProjectile();
+        GetTree().CurrentScene.AddChild(arrow);
+        arrow.GlobalPosition = origin;
+        arrow.Launch(packet, Entity, team, forward, Weapon!.ProjectileSpeed, Weapon.ProjectileRange);
     }
 
     private float AttackSpeed()
