@@ -775,7 +775,6 @@ public partial class GameBootstrap : Node3D
         TryDropPickup(GameIds.Items.LeatherCap, 1, new Vector3(-1.2f, 0f, 3f));
         TryDropPickup(GameIds.Items.LeatherVest, 1, new Vector3(-3f, 0f, 2.5f));
         TryDropPickup(GameIds.Items.SteelSword, 1, new Vector3(1.5f, 0f, -2.5f));
-        TryDropPickup(GameIds.Items.Bow, 1, new Vector3(2.2f, 0f, -2.5f));
         TryDropPickup(GameIds.Items.IronRing, 1, new Vector3(3f, 0f, -3.5f));
 
         // A procedurally-rolled Rare blade to show off the affix pipeline.

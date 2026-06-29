@@ -7,9 +7,9 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The persistent bottom-of-screen quick-use bar — five cells mirroring the player's
-/// <see cref="HotbarComponent"/>. Each shows its number, the assigned item's name and live count;
-/// pressing 1-5 uses the slot (handled by the component), clicking a cell here clears it. Items are
+/// The persistent bottom-of-screen <b>consumables</b> quick-use bar — five cells mirroring the player's
+/// <see cref="HotbarComponent"/>. Each shows its number, the assigned consumable's name and live count;
+/// pressing 1-5 uses the slot (handled by the component), clicking a cell here clears it. Consumables are
 /// assigned from the inventory panel. Rebuilds from a dirty flag, never during a button signal.
 /// </summary>
 public partial class HotbarPanel : CanvasLayer
@@ -45,27 +45,32 @@ public partial class HotbarPanel : CanvasLayer
 
         MarginContainer pad = UiTheme.Padding(8);
         panel.AddChild(pad);
+
+        var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", 4);
+        pad.AddChild(column);
+
+        Label caption = UiTheme.Body(Loc.T("hud.consumables"), UiTheme.Dim);
+        caption.HorizontalAlignment = HorizontalAlignment.Center;
+        column.AddChild(caption);
+
         _row = new HBoxContainer();
         _row.AddThemeConstantOverride("separation", 6);
-        pad.AddChild(_row);
+        column.AddChild(_row);
 
         EventBus.Instance?.Subscribe<HotbarChangedEvent>(OnDirty);
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnDirty);
-        EventBus.Instance?.Subscribe<EquipmentChangedEvent>(OnDirty);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<HotbarChangedEvent>(OnDirty);
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnDirty);
-        EventBus.Instance?.Unsubscribe<EquipmentChangedEvent>(OnDirty);
     }
 
     private void OnDirty(HotbarChangedEvent e) => _dirty = true;
 
     private void OnDirty(InventoryChangedEvent e) => _dirty = true;
-
-    private void OnDirty(EquipmentChangedEvent e) => _dirty = true;
 
     public override void _Process(double delta)
     {

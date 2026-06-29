@@ -27,13 +27,6 @@ public partial class WeaponResource : Resource
     /// <summary>Animation/feel speed multiplier; combines with the wielder's AttackSpeed stat.</summary>
     [Export] public float AttackSpeed { get; set; } = 1f;
 
-    [ExportGroup("Ranged (a projectile weapon — e.g. a bow)")]
-    /// <summary>When true the weapon fires an <see cref="ArrowProjectile"/> on its active frame instead
-    /// of opening a melee hitbox. Damage / poise / type come from the fields above.</summary>
-    [Export] public bool Ranged { get; set; } = false;
-    [Export] public float ProjectileSpeed { get; set; } = 30f;
-    [Export] public float ProjectileRange { get; set; } = 26f;
-
     [ExportGroup("Combo")]
     [Export] public int ComboLength { get; set; } = 3;
 

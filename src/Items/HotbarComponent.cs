@@ -7,13 +7,13 @@ using Godot;
 namespace Embervale.Items;
 
 /// <summary>
-/// The player's quick-use bar: five slots, each holding an item <b>template id</b>. Pressing the
-/// matching number key (1-5, bound in <see cref="GameInput.Hotbar"/>) activates the slot — a
-/// consumable is drunk, an equippable is equipped (which, for a weapon, swaps it in as the active
-/// weapon). Assignments are made from the inventory panel and persisted via <see cref="ISaveable"/>.
+/// The player's <b>consumables</b> quick-use bar: five slots, each holding a consumable item
+/// <b>template id</b>. Pressing the matching number key (1-5, bound in <see cref="GameInput.Hotbar"/>)
+/// drinks/uses the slot's consumable from the bag. Assignments are made from the inventory panel (only
+/// consumables can be assigned) and persisted via <see cref="ISaveable"/>.
 ///
 /// Stored by id rather than instance so it survives save/load; <see cref="Activate"/> resolves the id to
-/// a live instance in the bag or — for an already-worn weapon — the equipment.
+/// a live instance in the bag.
 /// </summary>
 [GlobalClass]
 public partial class HotbarComponent : EntityComponent, ISaveable
@@ -22,14 +22,12 @@ public partial class HotbarComponent : EntityComponent, ISaveable
 
     private readonly string[] _slots = { "", "", "", "", "" };
     private InventoryComponent? _inventory;
-    private EquipmentComponent? _equipment;
 
     public string SaveId => SaveKey("hotbar");
 
     protected override void OnInitialize()
     {
         _inventory = Entity!.GetComponent<InventoryComponent>();
-        _equipment = Entity!.GetComponent<EquipmentComponent>();
         RegisterSaveable();
     }
 
@@ -40,11 +38,17 @@ public partial class HotbarComponent : EntityComponent, ISaveable
 
     public string Get(int slot) => slot >= 0 && slot < SlotCount ? _slots[slot] : string.Empty;
 
-    /// <summary>Assigns <paramref name="itemId"/> to <paramref name="slot"/>, clearing it from any other
-    /// slot first so an item lives in exactly one place.</summary>
+    /// <summary>Assigns a <b>consumable</b> <paramref name="itemId"/> to <paramref name="slot"/>, clearing
+    /// it from any other slot first so an item lives in exactly one place. Non-consumables are ignored.</summary>
     public void Assign(int slot, string itemId)
     {
         if (slot < 0 || slot >= SlotCount)
+        {
+            return;
+        }
+
+        // Consumables-only bar: silently reject anything that isn't a consumable.
+        if (ItemDatabase.Get(itemId) is not ConsumableItemResource)
         {
             return;
         }
@@ -72,8 +76,8 @@ public partial class HotbarComponent : EntityComponent, ISaveable
         NotifyChanged();
     }
 
-    /// <summary>Uses the item assigned to <paramref name="slot"/>: drink a consumable, equip an
-    /// equippable (re-applying a worn weapon as active). No-op for an empty slot or a missing item.</summary>
+    /// <summary>Uses the consumable assigned to <paramref name="slot"/> from the bag. No-op for an empty
+    /// slot, a missing item, or a non-consumable (a stale id from an old save).</summary>
     public void Activate(int slot)
     {
         if (slot < 0 || slot >= SlotCount || _slots[slot].Length == 0)
@@ -81,28 +85,10 @@ public partial class HotbarComponent : EntityComponent, ISaveable
             return;
         }
 
-        ItemInstance? instance = _inventory?.FirstInstanceOf(_slots[slot]) ?? _equipment?.FirstEquippedInstanceOf(_slots[slot]);
-        if (instance == null)
-        {
-            return;
-        }
-
-        if (instance.Template is ConsumableItemResource)
+        ItemInstance? instance = _inventory?.FirstInstanceOf(_slots[slot]);
+        if (instance?.Template is ConsumableItemResource)
         {
             _inventory?.Consume(instance);
-        }
-        else if (instance.IsEquippable && _equipment != null)
-        {
-            // Already worn (e.g. switching to the off-hand bow) → just make it the active weapon;
-            // Equip() can't, since it requires the item to be in the bag. Otherwise equip from the bag.
-            if (_equipment.IsInstanceEquipped(instance))
-            {
-                _equipment.ActivateWeapon(instance);
-            }
-            else
-            {
-                _equipment.Equip(instance);
-            }
         }
     }
 

@@ -115,7 +115,6 @@ public static class PlayerFactory
             Name = "Weapon",
             Weapon = weapon,
             Hitbox = hitbox,
-            AimNode = cameraPivot, // ranged weapons (the bow) fire where the player looks
         });
         player.AddChild(new HitReactionComponent { Name = "HitReaction" });
         player.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
