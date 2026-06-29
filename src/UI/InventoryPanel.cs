@@ -36,12 +36,15 @@ public partial class InventoryPanel : CanvasLayer
     {
         _panel = UiTheme.Panel();
         _panel.Visible = false;
-        // Anchor to the screen's top-right with a margin so it never spills off-screen at any resolution
-        // (the viewport stretches via canvas_items/expand; absolute positions would overflow).
-        _panel.SetAnchorsPreset(Control.LayoutPreset.TopRight);
-        _panel.OffsetTop = 16;
-        _panel.OffsetRight = -16;
-        _panel.OffsetLeft = -(PanelWidth + 16);
+        // Centered on screen (a modal — it frees the mouse via UiState). Anchored rather than absolute
+        // so it stays on-screen and centered at any resolution (the viewport stretches via
+        // canvas_items/expand; an absolute position would drift off-screen).
+        _panel.SetAnchorsPreset(Control.LayoutPreset.Center);
+        // Grow from the centre anchor in both directions so it's truly centred (the default End grow
+        // would push it toward the bottom-right of centre).
+        _panel.GrowHorizontal = Control.GrowDirection.Both;
+        _panel.GrowVertical = Control.GrowDirection.Both;
+        _panel.CustomMinimumSize = new Vector2(PanelWidth, 0f);
         AddChild(_panel);
 
         MarginContainer margin = UiTheme.Padding(12);
