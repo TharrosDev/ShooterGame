@@ -1991,9 +1991,22 @@ no code) — batch them when momentum is good.
     (drain lag + snap-full on encounter start); the corruption vignette moved to the
     bible's violet in 30.5A. Build + 313 tests green; verified in a live maintainer combat
     session (damage dealt and taken, no errors).
-- [ ] **30.5F — Panel & screen framework** `[F]`
-  - **Done when:** a screen/route manager + a reusable modal/non-modal panel shell, tab system,
-    list/grid, and tooltip system exist; one panel is ported to prove the framework.
+- [x] **30.5F — Panel & screen framework** `[F]` ✅
+  - **Done:** `UiPanel` (`src/UI/UiPanel.cs`) — the reusable panel shell every screen builds
+    on: themed frame, optional toggle input action, the **modal contract** (register with
+    `UiState` + free/recapture the mouse; non-modal overlays skip it via `Modal => false`),
+    and the rebuild-from-a-dirty-flag loop (`MarkDirty` → at most one `Rebuild` per frame,
+    never inside a button signal). Subclasses implement `BuildShell` (static layout, once)
+    and `Rebuild` (dynamic rows). **`UiTabs`** — the shared tab strip (accent-highlighted
+    active tab, `TabChanged` event). **`UiTheme.ScrollList`/`ClearChildren`** — the list
+    body + rebuild-clear helpers every panel repeats. **Proving port:** `InventoryPanel`
+    (the richest panel: modal + tabs + scroll list) rebuilt on the framework with ~80 lines
+    of hand-rolled plumbing deleted, feature-parity. *Scope note:* item tooltips stay on
+    Godot's native `TooltipText` (already themed-adjacent, zero code); a screen/route
+    manager was deliberately skipped — the four meta screens (menu/creator/slots/loading)
+    are wired directly by the bootstrap and a router would be speculative structure until
+    30.5J's gamepad focus needs a screen stack. Build + 313 tests green; verified in a long
+    live maintainer session (combat, region travel, saves; no errors).
 - [ ] **30.5G — Inventory / character / equipment / perks panels rebuilt** `[F/P]`
   - **Done when:** all four are rebuilt on the 30.5F framework + tokens, feature-parity, no
     regressions.
