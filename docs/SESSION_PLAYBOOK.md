@@ -1929,9 +1929,18 @@ no code) — batch them when momentum is good.
     source of truth (identity, tokens, type/spacing/motion rules, widget + text rules,
     roadmap seams). Build + 313 tests green; booted in-engine to the token-rendered main
     menu, no errors.
-- [ ] **30.5B — HUD architecture & layout system** `[F]`
-  - **Done when:** a responsive, **UI-scalable**, safe-area-aware HUD container with anchored
-    widget slots exists; `GameHud` is refactored onto it with no regressions.
+- [x] **30.5B — HUD architecture & layout system** `[F]` ✅
+  - **Done:** `HudLayout` (`src/UI/HudLayout.cs`) — a full-screen, mouse-transparent root with
+    anchored **slots** (`TopLeft`/`TopCenter`/`TopRight`/`BottomLeft`/`BottomCenter` stacks +
+    a free `Overlay` layer) inside a single safe-area margin (`SafeMargin`, token `SpaceLg`),
+    replacing every per-widget anchor/offset in `GameHud`. The top-centre widgets (compass,
+    boss bar, event banner, nameplate) now stack with automatic spacing — hidden widgets
+    collapse, fixing the hand-tuned y-offsets (6/14/40/66) that visually collided when
+    several showed at once. **UI scale made real:** the previously-dead `Settings.UiScale`
+    (0.75–1.5 slider, Phase 24F) now drives `Window.ContentScaleFactor` in
+    `SettingsService.ApplyGraphics` — with the project's `canvas_items` stretch this scales
+    every 2D surface live, no per-widget math. Build + 313 tests green; verified in-engine
+    during a live maintainer play session (save loaded, town hub streamed, HUD up, no errors).
 - [ ] **30.5C — Core HUD widgets rebuilt** `[F/P]`
   - **Done when:** vitals (health/stamina/mana), prepared spell + cooldown, status effects,
     and the crosshair are rebuilt on the tokens with value-change juice.

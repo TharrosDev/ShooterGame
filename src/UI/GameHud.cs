@@ -15,15 +15,18 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The purpose-built in-game HUD (Phase 18), the player-facing overlay that replaces the
-/// old debug read-out as the default on-screen UI. Anchored widgets rather than a text
-/// dump: vitals bars bottom-left, a prepared-spell + status line, a quest tracker top-right,
-/// time/weather top-left, a world-event banner and aimed-target nameplate up top, an
-/// interaction prompt bottom-centre, and the crosshair. Persistent nodes updated each frame
-/// from the player and the world directors; built through <see cref="UiTheme"/>.
+/// The purpose-built in-game HUD (Phase 18; laid out on the 30.5B slot system), the
+/// player-facing overlay that replaces the old debug read-out as the default on-screen UI.
+/// Widgets live in <see cref="HudLayout"/> slots: vitals bottom-left, a prepared-spell +
+/// status line, a quest tracker top-right, time/weather top-left, the compass / boss bar /
+/// world-event banner / aimed-target nameplate stacked top-centre (hidden widgets collapse,
+/// so they never overlap), an interaction prompt bottom-centre, and the crosshair. Persistent
+/// nodes updated each frame from the player and the world directors; built through
+/// <see cref="UiTheme"/>.
 /// </summary>
 public partial class GameHud : CanvasLayer
 {
+    private HudLayout _layout = null!;
     private IEntity? _player;
     private WorldClock? _clock;
     private WeatherDirector? _weather;
@@ -91,17 +94,21 @@ public partial class GameHud : CanvasLayer
 
     public override void _Ready()
     {
-        BuildVignette(); // backmost — built first so the HUD widgets draw over it
-        AddChild(new Crosshair());
+        _layout = new HudLayout { Name = "Layout" };
+        AddChild(_layout);
+
+        BuildVignette(); // backmost overlay — built first so the HUD widgets draw over it
+        _layout.Overlay.AddChild(new Crosshair());
         BuildVitals();
         BuildContext();
+        // Top-centre stack order (top to bottom): compass strip, boss bar, event banner, nameplate.
         BuildCompass();
-        BuildQuestTracker();
+        BuildBossBar();
         BuildBanner();
         BuildNameplate();
+        BuildQuestTracker();
         BuildPrompt();
         BuildLockReticle();
-        BuildBossBar();
 
         EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
         EventBus.Instance?.Subscribe<BossEncounterStartedEvent>(OnBossStarted);
@@ -122,12 +129,8 @@ public partial class GameHud : CanvasLayer
     private void BuildVitals()
     {
         PanelContainer panel = Ignore(UiTheme.Panel());
-        panel.SetAnchorsPreset(Control.LayoutPreset.BottomLeft);
-        panel.OffsetLeft = 16;
-        panel.OffsetBottom = -16;
-        panel.GrowVertical = Control.GrowDirection.Begin;
         panel.CustomMinimumSize = new Vector2(300, 0);
-        AddChild(panel);
+        _layout.BottomLeft.AddChild(panel);
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 4);
@@ -153,8 +156,7 @@ public partial class GameHud : CanvasLayer
     private void BuildContext()
     {
         PanelContainer panel = Ignore(UiTheme.Panel());
-        panel.Position = new Vector2(16, 16);
-        AddChild(panel);
+        _layout.TopLeft.AddChild(panel);
 
         _context = UiTheme.Body("", UiTheme.Dim);
         var col = new VBoxContainer();
@@ -166,12 +168,8 @@ public partial class GameHud : CanvasLayer
     {
         _questPanel = Ignore(UiTheme.Panel());
         _questPanel.Visible = false;
-        _questPanel.SetAnchorsPreset(Control.LayoutPreset.TopRight);
-        _questPanel.OffsetRight = -16;
-        _questPanel.OffsetTop = 16;
-        _questPanel.GrowHorizontal = Control.GrowDirection.Begin;
         _questPanel.CustomMinimumSize = new Vector2(240, 0);
-        AddChild(_questPanel);
+        _layout.TopRight.AddChild(_questPanel);
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 2);
@@ -183,18 +181,17 @@ public partial class GameHud : CanvasLayer
 
     private void BuildCompass()
     {
-        _compass = new CompassStrip();
-        CenterTop(_compass, 6);
+        _compass = new CompassStrip { SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter };
         _compass.SetPlayer(_player);
-        AddChild(_compass);
+        _layout.TopCenter.AddChild(_compass);
     }
 
     private void BuildBanner()
     {
         _bannerPanel = Ignore(UiTheme.Panel());
         _bannerPanel.Visible = false;
-        CenterTop(_bannerPanel, 40);
-        AddChild(_bannerPanel);
+        _bannerPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+        _layout.TopCenter.AddChild(_bannerPanel);
 
         _bannerText = UiTheme.Body("", UiTheme.Accent);
         var col = new VBoxContainer();
@@ -206,9 +203,9 @@ public partial class GameHud : CanvasLayer
     {
         _namePanel = Ignore(UiTheme.Panel());
         _namePanel.Visible = false;
-        CenterTop(_namePanel, 66);
         _namePanel.CustomMinimumSize = new Vector2(220, 0);
-        AddChild(_namePanel);
+        _namePanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+        _layout.TopCenter.AddChild(_namePanel);
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 3);
@@ -234,15 +231,15 @@ public partial class GameHud : CanvasLayer
         };
         _lockReticle.AddThemeFontSizeOverride("font_size", 22);
         _lockReticle.AddThemeColorOverride("font_color", UiTheme.Accent);
-        AddChild(_lockReticle);
+        _layout.Overlay.AddChild(_lockReticle);
     }
 
     private void BuildPrompt()
     {
         _promptPanel = Ignore(UiTheme.Panel());
         _promptPanel.Visible = false;
-        CenterBottom(_promptPanel, 120);
-        AddChild(_promptPanel);
+        _promptPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+        _layout.BottomCenter.AddChild(_promptPanel);
 
         _promptText = UiTheme.Body("", UiTheme.Accent);
         var col = new VBoxContainer();
@@ -281,7 +278,7 @@ public partial class GameHud : CanvasLayer
             SelfModulate = new Color(1f, 1f, 1f, 0f),
         };
         _vignette.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        AddChild(_vignette);
+        _layout.Overlay.AddChild(_vignette);
     }
 
     // --- Per-frame update ---------------------------------------------------
@@ -549,12 +546,12 @@ public partial class GameHud : CanvasLayer
         _bossFade = Ignore(new ColorRect { Color = new Color(0f, 0f, 0f), SelfModulate = new Color(1f, 1f, 1f, 0f) });
         _bossFade.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         _bossFade.Visible = false;
-        AddChild(_bossFade);
+        _layout.Overlay.AddChild(_bossFade);
 
         _bossPanel = Ignore(UiTheme.Panel());
         _bossPanel.Visible = false;
-        CenterTop(_bossPanel, 14);
-        AddChild(_bossPanel);
+        _bossPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+        _layout.TopCenter.AddChild(_bossPanel);
 
         var col = new VBoxContainer();
         _bossName = UiTheme.Header(Loc.T("boss.name"));
@@ -652,28 +649,6 @@ public partial class GameHud : CanvasLayer
         MarginContainer pad = UiTheme.Padding(10);
         pad.AddChild(content);
         panel.AddChild(pad);
-    }
-
-    private static void CenterTop(Control control, float y)
-    {
-        control.AnchorLeft = 0.5f;
-        control.AnchorRight = 0.5f;
-        control.AnchorTop = 0f;
-        control.AnchorBottom = 0f;
-        control.GrowHorizontal = Control.GrowDirection.Both;
-        control.GrowVertical = Control.GrowDirection.End;
-        control.OffsetTop = y;
-    }
-
-    private static void CenterBottom(Control control, float y)
-    {
-        control.AnchorLeft = 0.5f;
-        control.AnchorRight = 0.5f;
-        control.AnchorTop = 1f;
-        control.AnchorBottom = 1f;
-        control.GrowHorizontal = Control.GrowDirection.Both;
-        control.GrowVertical = Control.GrowDirection.Begin;
-        control.OffsetBottom = -y;
     }
 
     private static T Ignore<T>(T control)
