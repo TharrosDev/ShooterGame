@@ -61,6 +61,13 @@ launch and capture errors/logs, `stop_project` to stop, `launch_editor`,
 `save_scene`). **Prefer running the project to verify non-trivial changes** rather than
 only reasoning about them.
 
+**Blender MCP scene hygiene (maintainer rule, 2026-07-02):** when authoring models via the
+Blender MCP, **never leave multiple models stacked at the world origin** (each "centered
+within itself"). Lay assets out side by side with clear spacing (e.g. 2–3 m apart along +X)
+so the maintainer can see at a glance what is being made in the Blender viewport; only zero
+an object's location transiently at export time (glTF export needs origin-relative
+placement), and move it back or lay out the next asset offset afterwards.
+
 ⚠️ **`run_project` does NOT recompile C#.** It launches whatever `Embervale.dll` was
 last built, so after editing any `.cs` you MUST rebuild first or the MCP runs a **stale
 binary** (a silent trap — a behaviour-preserving change looks "verified" while your edit

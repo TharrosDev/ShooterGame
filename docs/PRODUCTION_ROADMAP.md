@@ -1065,7 +1065,7 @@ The ordering is driven by hard dependencies, not preference:
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
-| B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅; next: 30 Animation, Models & Visual Identity) |
+| B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅; next: 30.5 UI & HUD Overhaul) |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
@@ -1084,9 +1084,21 @@ region-potency dial + spell recovery, enemy/NPC caster AI, and the 29.5G magic U
 spellbook with mastery/charge/channel feedback, a SpellPoints economy, and one signature spell per
 school: Flame Lance, Ball Lightning, Blizzard, Blink, Lifebloom Totem, Ember Siphon).
 
-**Immediate next step: Phase 30 — Animation, Models & Visual Identity** (the art direction made
-real for the slice cast; sub-phases 30A–30I in `SESSION_PLAYBOOK.md`), then 30.5 (UI overhaul),
-31 (audio), 32 (companions), 33 (slice assembly) toward **Gate G1 — Vertical Slice**.
+**Phase 30 (Animation, Models & Visual Identity) is complete (30A–30I)** — `docs/ART_STYLE.md`
+pins the direction (low-poly but detailed, Skyrim-grounded, "carved not sculpted", organic
+smooth-shaded bodies / faceted hard surfaces); the player has a rigged, animated low-poly body
+with 8 clips, a held sword on the hand bone, and cast/channel animation + school-tinted cast
+flashes; the slice cast (goblin + brute, the Iron King, vendor/innkeeper/guild-rep) has authored
+models, with goblin + Iron King rigged and animated driving the existing AI/combat states through
+the reusable `CharacterAnimationComponent`; the Ember Crown town hub is dressed with a 10-piece
+architecture/prop kit (NPCs wearing their 30D models) and the wilds got a dressing pass; status
+effects show school-tinted particle swirls, and the corruption appearance now follows the
+ART_STYLE per-tier arc (violet veining → ash → char → banked coals). All assets self-authored in
+Blender via the MCP (no external/licensed assets pulled yet).
+
+**Immediate next step: Phase 30.5 — UI & HUD Overhaul** (design tokens + `docs/UI_STYLE.md`
+first, sub-phases 30.5A–K in `SESSION_PLAYBOOK.md`), then 31 (audio), 32 (companions),
+33 (slice assembly) toward **Gate G1 — Vertical Slice**.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four

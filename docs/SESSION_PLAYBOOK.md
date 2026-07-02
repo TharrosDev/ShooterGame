@@ -1819,9 +1819,25 @@ no code) — batch them when momentum is good.
     ruin pillars (one tilted) over its existing greybox. `--import` + `--validate` (cell scene
     paths re-resolve) + in-engine streaming run green — the maintainer walked the dressed town
     and wilds live, both cells stream in/out with no errors.
-- [ ] **30I — Status/impact VFX library + corruption materials** `[P]`
+- [x] **30I — Status/impact VFX library + corruption materials** `[P]` ✅
   - **Done when:** status effects + corruption tiers (replacing 23F placeholders)
     use real materials/VFX.
+  - **Done:** **status VFX** — new `src/Magic/StatusEffectVfxComponent.cs`, a purely cosmetic
+    component driven by the existing `StatusEffectAppliedEvent`/`RemovedEvent`: while a status
+    afflicts an actor, a small looping school-tinted `GpuParticles3D` swirl (ring-emitted
+    billboarded emissive quads, built in code — no scene asset) hangs on the body, so burning
+    reads orange, chill ice-blue, regrowth green at a glance; on removal it stops emitting and
+    fades out. Wired onto the player, goblin, Iron King, Ashen Acolyte and the training dummy.
+    Impact/melee VFX already existed (`ImpactEffect`, Phase 29). **Corruption materials** — the
+    23F linear-lerp placeholder is replaced with the ART_STYLE §2.2 **per-tier arc** in
+    `CorruptionAppearanceController`: Touched = faint violet skin veining + violet emissive ·
+    Marked = ash-grey skin patches + dim ember · Ashbound = charred skin + rising ember glow ·
+    Embers = banked-coal skin + bright ember; clothing/gear only gathers ash, skin carries the
+    tint + emissive. Also this sub-phase: CLAUDE.md §2 gains the maintainer's **Blender scene
+    hygiene rule** (never leave models stacked at origin — lay assets out side by side so
+    they're reviewable in the viewport). Build + 313 tests + `--validate` (exit 0) green;
+    in-engine run clean with the maintainer playing. Final particle/material art is Phase 53.
+    **Phase 30 (Animation, Models & Visual Identity) is complete (30A–30I).**
 
 ---
 

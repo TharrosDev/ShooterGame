@@ -80,6 +80,7 @@ public static class AshenAcolyteFactory
 
         // The player's spells can burn/chill/freeze it; its own casts also push statuses onto it.
         enemy.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
+        enemy.AddChild(new StatusEffectVfxComponent { Name = "StatusVfx" });
 
         // The cast muzzle/aim source at chest height: a child of the body, so facing the target aims the
         // bolt at them (the AI calls LookAt each tick). Mirrors the player wiring its camera pivot in.

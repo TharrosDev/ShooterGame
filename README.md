@@ -227,9 +227,9 @@ signature spell per school.
 
 |              | Phase                                          |
 | ------------ | ---------------------------------------------- |
-| ✅ **Done**    | 22–29 + G0 First Playable; 29.5 Spellcraft      |
-| ▶ **Current** | 30 — Animation, Models & Visual Identity        |
-| ⏭ **Next**    | 30.5 — UI & HUD Overhaul                        |
+| ✅ **Done**    | 22–30 + G0 First Playable (29.5 Spellcraft, 30 Models & Animation) |
+| ▶ **Current** | 30.5 — UI & HUD Overhaul                        |
+| ⏭ **Next**    | 31 — Audio Foundations                          |
 
 > A phase is "done" when it works in-game **and** round-trips through save/load.
 

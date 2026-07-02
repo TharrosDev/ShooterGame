@@ -107,6 +107,7 @@ public static class EnemyFactory
 
         // Lets the player's spells burn/chill the goblin (DoT + slows apply here).
         enemy.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
+        enemy.AddChild(new StatusEffectVfxComponent { Name = "StatusVfx" });
         // Faction membership: AI aggression keys off the player's standing with this faction.
         enemy.AddChild(new FactionComponent { Name = "Faction", FactionId = GameIds.Factions.Goblins });
         enemy.AddChild(new EnemyAIComponent { Name = "AI" });

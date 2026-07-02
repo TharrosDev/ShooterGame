@@ -714,6 +714,7 @@ public partial class GameBootstrap : Node3D
 
         // So spell DoTs/slows can be observed landing on the practice target.
         dummy.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
+        dummy.AddChild(new Magic.StatusEffectVfxComponent { Name = "StatusVfx" });
 
         var mesh = new MeshInstance3D
         {
