@@ -1914,14 +1914,21 @@ no code) — batch them when momentum is good.
 > menus, then feel/input. All strings go through the Phase 24 `Loc` layer. Each sub-phase
 > leaves the game buildable/playable; verify in-engine (build → `run_project`, CLAUDE.md §3).
 
-- [ ] **30.5A — Design tokens + `docs/UI_STYLE.md`** `[P]`
+- [x] **30.5A — Design tokens + `docs/UI_STYLE.md`** `[P]` ✅
   - **Goal:** the foundation every other surface answers to.
-  - **Tasks:** grow `UiTheme` (`src/UI/UiTheme.cs`) from palette+builders into real **tokens**
-    — palette, type scale, spacing, radius, elevation, motion (durations/easing). Write
-    `docs/UI_STYLE.md` pinning the dying-world UI identity (ash/faded/ember), matched to
-    `docs/ART_STYLE.md` (30A).
-  - **Done when:** tokens exist and one widget is rebuilt on them as proof; the style guide is
-    the documented source of truth.
+  - **Done:** `UiTheme` regrown into token groups with the public API preserved (all ~36
+    consuming files untouched): palette retuned from generic blue-grey/gold to the art
+    bible's identity (warm-charcoal `PanelBg`/`Trough`, bone-pale `Text`, ash `Dim`,
+    ember-gold `Accent` + rationed ember-orange `AccentHot`, corruption **violet** per
+    ART_STYLE §2); a five-step type scale (`Caption`→`Display`) with a new `Caption`
+    builder; spacing (`SpaceXs..Xl`) and radius (`RadiusSm/Md/Lg`) scales consumed by the
+    styleboxes; motion tokens (`DurationFast/Base/Slow`) behind `UiTheme.Duration()`, which
+    collapses to 0 under the reduced-motion setting (the 30.5I guard, landed early); and a
+    shared interactive style with an ember **focus** stylebox on `Action`/`Dropdown` — the
+    visibility seam 30.5J's gamepad navigation rides. `docs/UI_STYLE.md` written as the
+    source of truth (identity, tokens, type/spacing/motion rules, widget + text rules,
+    roadmap seams). Build + 313 tests green; booted in-engine to the token-rendered main
+    menu, no errors.
 - [ ] **30.5B — HUD architecture & layout system** `[F]`
   - **Done when:** a responsive, **UI-scalable**, safe-area-aware HUD container with anchored
     widget slots exists; `GameHud` is refactored onto it with no regressions.
