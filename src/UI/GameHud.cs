@@ -131,7 +131,7 @@ public partial class GameHud : CanvasLayer
     private void BuildVitals()
     {
         PanelContainer panel = Ignore(UiTheme.Panel());
-        panel.CustomMinimumSize = new Vector2(300, 0);
+        panel.CustomMinimumSize = new Vector2(250, 0);
         _layout.BottomLeft.AddChild(panel);
 
         var col = new VBoxContainer();
@@ -170,7 +170,7 @@ public partial class GameHud : CanvasLayer
     {
         _questPanel = Ignore(UiTheme.Panel());
         _questPanel.Visible = false;
-        _questPanel.CustomMinimumSize = new Vector2(240, 0);
+        _questPanel.CustomMinimumSize = new Vector2(210, 0);
         _layout.TopRight.AddChild(_questPanel);
 
         var col = new VBoxContainer();
@@ -205,7 +205,7 @@ public partial class GameHud : CanvasLayer
     {
         _namePanel = Ignore(UiTheme.Panel());
         _namePanel.Visible = false;
-        _namePanel.CustomMinimumSize = new Vector2(220, 0);
+        _namePanel.CustomMinimumSize = new Vector2(190, 0);
         _namePanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _layout.TopCenter.AddChild(_namePanel);
 
@@ -214,7 +214,7 @@ public partial class GameHud : CanvasLayer
         _nameText = UiTheme.Body("");
         _nameText.HorizontalAlignment = HorizontalAlignment.Center;
         col.AddChild(_nameText);
-        _nameBar = UiTheme.Bar(UiTheme.Health, 200f);
+        _nameBar = UiTheme.Bar(UiTheme.Health, 170f);
         col.AddChild(_nameBar);
         WrapPadded(_namePanel, col);
     }
@@ -560,7 +560,7 @@ public partial class GameHud : CanvasLayer
         _bossName.HorizontalAlignment = HorizontalAlignment.Center;
         col.AddChild(_bossName);
 
-        _bossBar = UiTheme.Bar(UiTheme.Health, 360f);
+        _bossBar = UiTheme.Bar(UiTheme.Health, 320f);
         col.AddChild(_bossBar);
 
         _bossPhase = UiTheme.Body("", UiTheme.Dim);

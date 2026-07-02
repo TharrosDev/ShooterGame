@@ -123,7 +123,7 @@ public partial class HotbarPanel : CanvasLayer
             }
 
             Button cell = UiTheme.Action(text);
-            cell.CustomMinimumSize = new Vector2(88f, 0f);
+            cell.CustomMinimumSize = new Vector2(78f, 0f);
             cell.TooltipText = Loc.T("hud.hotbar_hint");
             int slot = i;
             cell.Pressed += () => _hotbar?.Clear(slot);
