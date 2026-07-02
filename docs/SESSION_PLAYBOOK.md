@@ -1966,9 +1966,18 @@ no code) — batch them when momentum is good.
     in place. Crosshair joined the palette (bone-pale token). Build + 313 tests green;
     verified during a live maintainer combat session (goblin fight: damage drain/pulse and
     nameplate exercised, no errors).
-- [ ] **30.5D — Wayfinding HUD** `[F/P]`
-  - **Done when:** compass, quest tracker, interaction prompt, nameplate, world-event banners,
-    and toasts/notifications are unified on the new system.
+- [x] **30.5D — Wayfinding HUD** `[F/P]` ✅
+  - **Done:** the wayfinding surfaces unified on the 30.5A/B system. **Interaction prompt:**
+    a real keycap chip (`UiTheme.KeyCap`) + prompt text, the cap's glyph resolved live from
+    the InputMap via `GameInput.KeyLabel` (remap-proof — the Phase 54 seam). **Quest
+    tracker:** the per-frame StringBuilder blob became structured rows (accent title, one
+    caption per objective, complete objectives tick to dead-green with ✓) rebuilt only when
+    the quest id/progress signature changes. **World-event banner:** the countdown split
+    into its own readout that heats to ember orange (`AccentHot`) in the final 10 s.
+    Compass and nameplate were already on-system (30.5B/C); toasts were restyled/moved in
+    30.5B and keep their fade (slide motion is 30.5I). Build + 313 tests green; verified in
+    a live maintainer session (goblin kills advanced the tracker rows; loot prompts used
+    the keycap chip; no errors).
 - [ ] **30.5E — Combat & boss HUD** `[F/P]`
   - **Done when:** boss healthbar, lock-on reticle, crit/stagger/block/parry screen feedback,
     and the corruption vignette hook (23E) are unified (ties Phase 28/29/23).

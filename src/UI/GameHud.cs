@@ -1,4 +1,5 @@
 using System.Text;
+using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Corruption;
 using Embervale.Enemies;
@@ -60,10 +61,12 @@ public partial class GameHud : CanvasLayer
     private Label _context = null!;
 
     private PanelContainer _questPanel = null!;
-    private Label _questText = null!;
+    private VBoxContainer _questList = null!;
+    private string _questSignature = string.Empty;
 
     private PanelContainer _bannerPanel = null!;
     private Label _bannerText = null!;
+    private Label _bannerTimer = null!;
 
     private PanelContainer _namePanel = null!;
     private Label _nameText = null!;
@@ -207,8 +210,9 @@ public partial class GameHud : CanvasLayer
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 2);
         col.AddChild(UiTheme.Header(Loc.T("hud.quest")));
-        _questText = UiTheme.Body("");
-        col.AddChild(_questText);
+        _questList = new VBoxContainer();
+        _questList.AddThemeConstantOverride("separation", 2);
+        col.AddChild(_questList);
         WrapPadded(_questPanel, col);
     }
 
@@ -226,10 +230,13 @@ public partial class GameHud : CanvasLayer
         _bannerPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _layout.TopCenter.AddChild(_bannerPanel);
 
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         _bannerText = UiTheme.Body("", UiTheme.Accent);
-        var col = new VBoxContainer();
-        col.AddChild(_bannerText);
-        WrapPadded(_bannerPanel, col);
+        row.AddChild(_bannerText);
+        _bannerTimer = UiTheme.Body("", UiTheme.Dim);
+        row.AddChild(_bannerTimer);
+        WrapPadded(_bannerPanel, row);
     }
 
     private void BuildNameplate()
@@ -274,10 +281,16 @@ public partial class GameHud : CanvasLayer
         _promptPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _layout.BottomCenter.AddChild(_promptPanel);
 
+        // A keycap chip + the prompt text ("[E] Loot" as a real glyph, not string brackets).
+        // The cap's label resolves from the InputMap so a future rebind stays correct.
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        PanelContainer cap = UiTheme.KeyCap(GameInput.KeyLabel(GameInput.Interact));
+        cap.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        row.AddChild(cap);
         _promptText = UiTheme.Body("", UiTheme.Accent);
-        var col = new VBoxContainer();
-        col.AddChild(_promptText);
-        WrapPadded(_promptPanel, col);
+        row.AddChild(_promptText);
+        WrapPadded(_promptPanel, row);
     }
 
     /// <summary>A full-screen radial vignette (clear centre, dark blood-red edges) whose opacity
@@ -495,47 +508,81 @@ public partial class GameHud : CanvasLayer
 
     private void UpdateQuest()
     {
-        if (_player is not { } player || player.GetComponent<QuestLogComponent>() is not { } log)
+        QuestProgress? active = null;
+        if (_player is { } player && player.GetComponent<QuestLogComponent>() is { } log)
+        {
+            foreach (QuestProgress progress in log.Quests)
+            {
+                if (progress.Status == QuestStatus.Active)
+                {
+                    active = progress;
+                    break;
+                }
+            }
+        }
+
+        if (active == null)
         {
             _questPanel.Visible = false;
+            _questSignature = string.Empty;
             return;
         }
 
-        foreach (QuestProgress progress in log.Quests)
+        // Rebuild the tracker rows only when the tracked quest's shape/progress changes.
+        var signature = new StringBuilder(active.Quest.Id);
+        foreach (int count in active.Counts)
         {
-            if (progress.Status != QuestStatus.Active)
-            {
-                continue;
-            }
-
-            var sb = new StringBuilder();
-            sb.Append(Loc.T(progress.Quest.Title));
-            var objectives = progress.Quest.ObjectiveList();
-            for (int i = 0; i < objectives.Count; i++)
-            {
-                sb.Append($"\n  {Loc.T(objectives[i].ShortLabel())}  {progress.Counts[i]}/{objectives[i].RequiredCount}");
-            }
-
-            _questText.Text = sb.ToString();
-            _questPanel.Visible = true;
-            return;
+            signature.Append(':').Append(count);
         }
 
-        _questPanel.Visible = false;
+        string current = signature.ToString();
+        if (current != _questSignature)
+        {
+            _questSignature = current;
+            RebuildQuestRows(active);
+        }
+
+        _questPanel.Visible = true;
+    }
+
+    /// <summary>Structured tracker rows (30.5D): accent title, then one line per objective —
+    /// complete objectives tick over to dead-green so progress reads at a glance.</summary>
+    private void RebuildQuestRows(QuestProgress progress)
+    {
+        foreach (Node child in _questList.GetChildren())
+        {
+            _questList.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        _questList.AddChild(UiTheme.Body(Loc.T(progress.Quest.Title), UiTheme.Accent));
+
+        var objectives = progress.Quest.ObjectiveList();
+        for (int i = 0; i < objectives.Count; i++)
+        {
+            bool done = progress.Counts[i] >= objectives[i].RequiredCount;
+            string mark = done ? "✓" : "•";
+            _questList.AddChild(UiTheme.Caption(
+                $"  {mark} {Loc.T(objectives[i].ShortLabel())}  {progress.Counts[i]}/{objectives[i].RequiredCount}",
+                done ? UiTheme.Good : UiTheme.Text));
+        }
     }
 
     private void UpdateBanner()
     {
         if (_worldEvents is { } director && IsInstanceValid(director) && director.Active is { } worldEvent)
         {
-            var sb = new StringBuilder();
-            sb.Append($"★ {worldEvent.Resource.DisplayName} — {worldEvent.ObjectiveLabel()}");
+            _bannerText.Text = $"★ {worldEvent.Resource.DisplayName} — {worldEvent.ObjectiveLabel()}";
+
+            // Separate countdown that heats to ember orange in the final seconds (urgency read).
+            _bannerTimer.Visible = worldEvent.IsTimed;
             if (worldEvent.IsTimed)
             {
-                sb.Append($"  ·  {worldEvent.TimeLeft:0}s");
+                _bannerTimer.Text = $"{worldEvent.TimeLeft:0}s";
+                _bannerTimer.AddThemeColorOverride("font_color",
+                    worldEvent.TimeLeft <= 10f ? UiTheme.AccentHot : UiTheme.Dim);
             }
 
-            _bannerText.Text = sb.ToString();
             _bannerPanel.Visible = true;
         }
         else
@@ -586,7 +633,7 @@ public partial class GameHud : CanvasLayer
         string? prompt = controller?.FocusPrompt;
         if (!string.IsNullOrEmpty(prompt))
         {
-            _promptText.Text = $"[E] {prompt}";
+            _promptText.Text = prompt;
             _promptPanel.Visible = true;
         }
         else

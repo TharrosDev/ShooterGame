@@ -122,6 +122,26 @@ public static class UiTheme
         return label;
     }
 
+    /// <summary>A small keycap chip (e.g. the "E" in the interaction prompt): the key's label
+    /// in a bordered well, sized to its content.</summary>
+    public static PanelContainer KeyCap(string key)
+    {
+        var box = new StyleBoxFlat { BgColor = Trough, BorderColor = Dim };
+        box.SetBorderWidthAll(1);
+        box.SetCornerRadiusAll(RadiusSm);
+        box.SetContentMarginAll(2);
+        box.ContentMarginLeft = 7;
+        box.ContentMarginRight = 7;
+
+        var cap = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        cap.AddThemeStyleboxOverride("panel", box);
+
+        Label label = Caption(key, Text);
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+        cap.AddChild(label);
+        return cap;
+    }
+
     public static Button Action(string text)
     {
         var button = new Button { Text = text };
