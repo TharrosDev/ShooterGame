@@ -84,6 +84,8 @@ public static class BossFactory
         // Deep poise so light hits don't stagger him — a boss shrugs off chip damage.
         boss.AddChild(new CombatComponent { Name = "Combat", Team = HostileTeam, MaxPoise = 150f });
         boss.AddChild(new LocomotionComponent { Name = "Locomotion" });
+        // 30F: plays the Iron King rig's idle/run/attack/hit/death clips off combat/locomotion state.
+        boss.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
         boss.AddChild(BuildHurtbox());
 
         var hitbox = new Hitbox
