@@ -1774,9 +1774,21 @@ no code) — batch them when momentum is good.
     channel's per-tick cast events skip the one-shot/flash spam. Build + 313 tests + `--import`
     green; in-engine run clean with the maintainer playing live. Real per-school particle VFX
     remain 30I's status/impact library pass.
-- [ ] **30F — Core enemy animation set (goblin + Iron King)** `[P]`
+- [x] **30F — Core enemy animation set (goblin + Iron King)** `[P]` ✅
   - **Done when:** locomotion/attack/hit/death sets (driving 30D's meshes) drive
     the existing AI/combat states for the slice cast.
+  - **Done:** the goblin and Iron King glbs are now **rigged and animated** via a parameterized
+    Blender-MCP pass (the 30C 17-bone humanoid armature scaled to each body's height/bulk/hunch,
+    automatic weights) with five clips each baked through NLA tracks: `idle-loop`, `run-loop`,
+    `attack` (goblin = wild right swipe; Iron King = two-hand overhead slam), `hit`, `death`.
+    Bone-heat weighting failed wholesale on the Iron King's disjoint armor islands (all 1980
+    verts unweighted) — fixed with **rigid nearest-bone binding** (point-to-bone-segment scan),
+    which suits plate armor anyway. Both factories add the 30C `CharacterAnimationComponent`
+    (`BodyMeshPath = "Mesh"`) — zero new gameplay wiring, since enemies already publish
+    `AttackPerformedEvent` through the same `MeleeWeaponComponent`, take `EntityDamagedEvent`,
+    and keep a death timer before `QueueFree` that gives the death clip room to play. Build +
+    313 tests + `--import` green; verified in-engine live — the maintainer fought animated
+    goblins and quick-saved repeatedly, no new errors (WASAPI audio-device noise pre-exists).
 - [ ] **30G — Third-person body for cutscenes/reflections** `[P]`
   - **Done when:** a TP body exists for the Phase 43 cutscenes and corruption
     appearance (23F) hangs off it.
