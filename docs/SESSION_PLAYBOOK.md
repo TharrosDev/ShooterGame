@@ -1677,9 +1677,22 @@ no code) — batch them when momentum is good.
 > hand-painted texture passes, audio). Each sub-phase integrates one asset class against
 > existing states.
 
-- [ ] **30A — Art-direction style guide** `[P]`
+- [x] **30A — Art-direction style guide** `[P]` ✅
   - **Done when:** `docs/ART_STYLE.md` pins the dying-world language (ash, faded
     colour, embers) + import/LOD conventions feeding Phase 19/57.
+  - **Done:** `docs/ART_STYLE.md` written. Direction (maintainer-pinned): **low-poly but
+    detailed — Skyrim's grounded, weathered fantasy realism in clean faceted geometry**
+    ("carved, not sculpted"): silhouette-first, facets-as-feature, detail via material
+    layering/painted wear (no photo textures — sourced PBR must be repainted/posterized).
+    Pins the three-layer dying-world language (faded base / ash / ember accents) with a
+    hex master palette + saturation discipline, per-realm grading for all four realms,
+    the corruption-tier body arc (23F/30I hook), and the school VFX tint law off
+    `SpellSchools.Color`. Conventions: per-class triangle + texel budgets and LOD
+    thresholds (Steam-Deck-aware, the Phase 19/57 seam), material/vertex-color rules,
+    1u=1m + 0.5 m modular-kit grid, fog-as-material atmosphere, and the Blender-MCP →
+    `.glb` → `assets/models/<class>/` pipeline incl. collision suffixes, rig limits, and
+    an `assets/CREDITS.md` licensing rule for sourced assets. Ends with a 7-point
+    per-asset review checklist. Doc-only; no code touched.
 - [ ] **30B — Player character model** `[P]`
   - **Goal:** the player has a real mesh to rig, not a placeholder capsule.
   - **Tasks:** built in Blender via the Blender MCP — base mesh + texture set matched
