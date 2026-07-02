@@ -653,6 +653,12 @@ public partial class GameHud : CanvasLayer
             if (!camera.IsPositionBehind(head))
             {
                 _lockReticle.Position = camera.UnprojectPosition(head) - (_lockReticle.Size / 2f);
+
+                // A slow breathe so the lock reads as live, not a painted marker (30.5E).
+                float alpha = UiTheme.MotionEnabled
+                    ? 0.8f + (0.2f * Mathf.Sin(Time.GetTicksMsec() / 250f))
+                    : 1f;
+                _lockReticle.Modulate = new Color(1f, 1f, 1f, alpha);
                 _lockReticle.Visible = true;
                 return;
             }
