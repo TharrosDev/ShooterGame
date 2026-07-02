@@ -2007,9 +2007,17 @@ no code) — batch them when momentum is good.
     are wired directly by the bootstrap and a router would be speculative structure until
     30.5J's gamepad focus needs a screen stack. Build + 313 tests green; verified in a long
     live maintainer session (combat, region travel, saves; no errors).
-- [ ] **30.5G — Inventory / character / equipment / perks panels rebuilt** `[F/P]`
-  - **Done when:** all four are rebuilt on the 30.5F framework + tokens, feature-parity, no
-    regressions.
+- [x] **30.5G — Inventory / character / equipment / perks panels rebuilt** `[F/P]` ✅
+  - **Done:** the sub-phase was authored before these surfaces merged into the tabbed
+    character screen (maintainer note), so 30.5G = the four **tab pages** (Gear incl.
+    equipment+backpack, Spells, Progression, Perks) fully on the 30.5F framework + tokens.
+    The panel shell/tabs/scroll ported in 30.5F's proving port; this pass finished the
+    content: the last colour literals tokenized (dread → `Corruption`, affix lines →
+    `Caption` in `Good`), row spacing on the spacing scale, and a **level-XP progress bar**
+    added to the Progression tab (accent fill, the same glanceable shape as the corruption
+    gauge below it — previously XP was numbers-only while corruption had a bar).
+    Feature-parity everywhere else. Build + 313 tests green; verified in a live maintainer
+    session (post-load full-vitals confirmed at legendary-boosted max HP; no errors).
 - [ ] **30.5H — Crafting / dialogue / journal / map panels rebuilt** `[F/P]`
   - **Done when:** the remaining panels are rebuilt on the framework; `DialoguePanel` keeps its
     modal behaviour, the journal/map stay non-modal.
