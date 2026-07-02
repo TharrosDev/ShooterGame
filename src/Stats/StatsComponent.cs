@@ -281,11 +281,22 @@ public partial class StatsComponent : EntityComponent, ISaveable
             return;
         }
 
+        // Defer the restore to the end of the frame: component loads run before equipment/
+        // race/perk modifiers re-apply, so restoring immediately clamps the saved value
+        // against the unmodified max (e.g. 367 HP clamped to a base 100).
+        var restored = new Dictionary<StatType, float>();
         var resources = resourcesVariant.AsGodotDictionary();
         foreach (Variant key in resources.Keys)
         {
-            var type = (StatType)key.AsInt32();
-            SetCurrent(type, resources[key].AsSingle());
+            restored[(StatType)key.AsInt32()] = resources[key].AsSingle();
         }
+
+        Callable.From(() =>
+        {
+            foreach (KeyValuePair<StatType, float> pair in restored)
+            {
+                SetCurrent(pair.Key, pair.Value);
+            }
+        }).CallDeferred();
     }
 }

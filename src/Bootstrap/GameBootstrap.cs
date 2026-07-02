@@ -1089,6 +1089,19 @@ public partial class GameBootstrap : Node3D
     private void OnGameLoaded(GameLoadedEvent e)
     {
         Log.Info($"Game loaded from slot '{e.Slot}'.");
+
+        // The player wakes at full vitals on every load (maintainer direction, 2026-07-02).
+        // Deferred two steps so it lands after StatsComponent's own deferred resource restore.
+        Callable.From(() => Callable.From(RefillPlayerResources).CallDeferred()).CallDeferred();
+    }
+
+    private static void RefillPlayerResources()
+    {
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) &&
+            IsInstanceValid(player) && player.GetComponent<StatsComponent>() is { } stats)
+        {
+            stats.RefillResources();
+        }
     }
 
     /// <summary>Supplies the gameplay fields of a save header (Phase 24B). Read lazily by the
