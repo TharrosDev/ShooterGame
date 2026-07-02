@@ -34,6 +34,23 @@ public static class GameInput
     /// <summary>Hotbar slots 1-5 (number-row keys) — quick-use/equip an assigned item.</summary>
     public static readonly string[] Hotbar = { "hotbar_1", "hotbar_2", "hotbar_3", "hotbar_4", "hotbar_5" };
 
+    /// <summary>The display label for <paramref name="action"/>'s first bound key (e.g. "E"),
+    /// resolved live from the InputMap so HUD prompts stay correct if bindings change
+    /// (the Phase 54 remap seam). Falls back to "?" for unbound/non-key actions.</summary>
+    public static string KeyLabel(string action)
+    {
+        foreach (InputEvent bound in InputMap.ActionGetEvents(action))
+        {
+            if (bound is InputEventKey key)
+            {
+                Key code = key.PhysicalKeycode != Key.None ? key.PhysicalKeycode : key.Keycode;
+                return OS.GetKeycodeString(code);
+            }
+        }
+
+        return "?";
+    }
+
     public static void EnsureActions()
     {
         Bind(MoveForward, new InputEventKey { PhysicalKeycode = Key.W });
