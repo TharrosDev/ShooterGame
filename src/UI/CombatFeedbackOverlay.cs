@@ -98,7 +98,9 @@ public partial class CombatFeedbackOverlay : CanvasLayer
     {
         (float r, float g, float b) = CombatFeedbackFx.Tint(state);
         _color = new Color(r, g, b);
-        _peak = CombatFeedbackFx.PeakAlpha(state);
+        // Reduced motion suppresses the full-screen flash (photosensitivity) — the word alone
+        // still communicates the state.
+        _peak = UiTheme.MotionEnabled ? CombatFeedbackFx.PeakAlpha(state) : 0f;
         _age = 0d;
         _active = true;
         _word.Text = Loc.T(wordKey);

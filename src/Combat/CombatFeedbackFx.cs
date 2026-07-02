@@ -12,8 +12,9 @@ public enum CombatFeedback
 /// <summary>
 /// Pure mapping from a player combat state to its screen-flash tint + intensity (Phase 29D). Godot-free
 /// so it's unit-testable; <see cref="Embervale.UI.CombatFeedbackOverlay"/> turns it into a fading
-/// full-screen flash. Tints echo the `UiTheme` palette (crit gold, block steel-blue, stagger red, parry
-/// bright gold-white). Knobs live here.
+/// full-screen flash. Tints follow the dying-world UI identity (30.5E, docs/UI_STYLE.md §1): crit is
+/// THE ember-orange accent, block is cold steel, stagger ashen red, parry a bright ember-gold pop.
+/// Knobs live here.
 /// </summary>
 public static class CombatFeedbackFx
 {
@@ -22,10 +23,10 @@ public static class CombatFeedbackFx
     /// <summary>Flash tint (r,g,b 0..1) for a state.</summary>
     public static (float R, float G, float B) Tint(CombatFeedback state) => state switch
     {
-        CombatFeedback.Crit => (0.95f, 0.82f, 0.42f),    // gold
-        CombatFeedback.Block => (0.45f, 0.60f, 0.85f),   // steel blue
-        CombatFeedback.Stagger => (0.86f, 0.30f, 0.30f), // danger red
-        CombatFeedback.Parry => (1.0f, 0.96f, 0.75f),    // bright gold-white
+        CombatFeedback.Crit => (0.91f, 0.45f, 0.17f),    // ember orange (UiTheme.AccentHot)
+        CombatFeedback.Block => (0.49f, 0.53f, 0.57f),   // cold steel (ART_STYLE palette)
+        CombatFeedback.Stagger => (0.82f, 0.42f, 0.36f), // ashen red (UiTheme.Bad)
+        CombatFeedback.Parry => (1.0f, 0.88f, 0.60f),    // bright ember-gold pop
         _ => (1f, 1f, 1f),
     };
 

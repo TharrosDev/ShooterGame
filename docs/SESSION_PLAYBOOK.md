@@ -1978,9 +1978,19 @@ no code) — batch them when momentum is good.
     30.5B and keep their fade (slide motion is 30.5I). Build + 313 tests green; verified in
     a live maintainer session (goblin kills advanced the tracker rows; loot prompts used
     the keycap chip; no errors).
-- [ ] **30.5E — Combat & boss HUD** `[F/P]`
-  - **Done when:** boss healthbar, lock-on reticle, crit/stagger/block/parry screen feedback,
-    and the corruption vignette hook (23E) are unified (ties Phase 28/29/23).
+- [x] **30.5E — Combat & boss HUD** `[F/P]` ✅
+  - **Done:** combat feedback unified on the identity. **Crosshair hit-marker:** landing
+    damage kicks the reticle arms outward for 0.18 s — ember orange (`AccentHot`) on crits,
+    bone pale otherwise — so hits confirm at the point of aim; suppressed under reduced
+    motion, and the reticle only redraws while a pop decays. **Screen-flash tints**
+    (`CombatFeedbackFx`, still pure/unit-tested) retuned from generic gold/steel-blue to the
+    dying-world identity: crit = ember orange, block = cold steel, stagger = ashen red,
+    parry = bright ember-gold pop; under reduced motion the full-screen flash is suppressed
+    (photosensitivity) and the state word alone shows. **Lock-on reticle** breathes
+    (0.8–1.0 alpha sine) so the lock reads live, motion-gated. Boss bar was juiced in 30.5C
+    (drain lag + snap-full on encounter start); the corruption vignette moved to the
+    bible's violet in 30.5A. Build + 313 tests green; verified in a live maintainer combat
+    session (damage dealt and taken, no errors).
 - [ ] **30.5F — Panel & screen framework** `[F]`
   - **Done when:** a screen/route manager + a reusable modal/non-modal panel shell, tab system,
     list/grid, and tooltip system exist; one panel is ported to prove the framework.
