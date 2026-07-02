@@ -217,7 +217,7 @@ public partial class InventoryPanel : UiPanel
         int dread = _reputation.Dread;
         if (dread > 0)
         {
-            AddLine(Loc.TF("char.dread", dread), new Color(0.74f, 0.45f, 0.62f));
+            AddLine(Loc.TF("char.dread", dread), UiTheme.Corruption);
         }
 
         foreach (FactionResource faction in FactionDatabase.All)
@@ -239,6 +239,16 @@ public partial class InventoryPanel : UiPanel
         AddHeader(Loc.T("char.tab_progression"));
         string xp = _progression.IsMaxLevel ? Loc.T("char.xp_max") : $"{_progression.CurrentXp} / {_progression.XpToNext}";
         AddLine(Loc.TF("char.level_line", _progression.Level, xp));
+
+        // XP toward the next level as a bar (30.5G) — same glanceable shape as corruption below.
+        if (!_progression.IsMaxLevel && _progression.XpToNext > 0)
+        {
+            ProgressBar bar = UiTheme.Bar(UiTheme.Accent);
+            bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            bar.Value = _progression.CurrentXp / (double)_progression.XpToNext;
+            _list.AddChild(bar);
+        }
+
         AddLine(Loc.TF("char.skill_points", _progression.SkillPoints));
     }
 
@@ -463,7 +473,7 @@ public partial class InventoryPanel : UiPanel
     {
         foreach (ItemAffix affix in instance.Affixes)
         {
-            AddLine($"      {affix.DisplayValue}", new Color(0.65f, 0.75f, 0.65f));
+            _list.AddChild(UiTheme.Caption($"      {affix.DisplayValue}", UiTheme.Good));
         }
     }
 
@@ -499,7 +509,7 @@ public partial class InventoryPanel : UiPanel
     private void AddRow(string text, string action, System.Action onPressed, Color? color = null, string? tooltip = null, string? hotbarAssignId = null)
     {
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 8);
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
         Label label = UiTheme.Body(text, color);
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
