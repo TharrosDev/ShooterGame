@@ -279,7 +279,7 @@ public partial class GameBootstrap : Node3D
         AddChild(new AnalyticsSink());
         _inventoryPanel = new InventoryPanel();
         AddChild(_inventoryPanel);
-        _hotbarPanel = new HotbarPanel();
+        _hotbarPanel = new HotbarPanel { Dock = _gameHud.BottomDock };
         AddChild(_hotbarPanel);
         _questLogPanel = new QuestLogPanel();
         AddChild(_questLogPanel);

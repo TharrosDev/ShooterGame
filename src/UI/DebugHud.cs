@@ -87,7 +87,8 @@ public partial class DebugHud : CanvasLayer
     private void BuildVitalsPanel()
     {
         _vitalsPanel = Ignore(UiTheme.Panel());
-        _vitalsPanel.Position = new Vector2(16, 16);
+        // Below the GameHud's top-left clock/weather widget so the F3 overlay doesn't cover it.
+        _vitalsPanel.Position = new Vector2(16, 64);
         _vitalsPanel.CustomMinimumSize = new Vector2(320, 0);
         AddChild(_vitalsPanel);
 
@@ -127,9 +128,17 @@ public partial class DebugHud : CanvasLayer
 
     private void BuildControlsHint()
     {
+        // Bottom-right: bottom-left belongs to the GameHud vitals + hotbar bar (30.5B).
         _controlsPanel = Ignore(UiTheme.Panel());
-        _controlsPanel.SetAnchorsPreset(Control.LayoutPreset.BottomLeft);
-        _controlsPanel.Position = new Vector2(16, -96);
+        _controlsPanel.AnchorLeft = 1f;
+        _controlsPanel.AnchorRight = 1f;
+        _controlsPanel.AnchorTop = 1f;
+        _controlsPanel.AnchorBottom = 1f;
+        _controlsPanel.OffsetLeft = -16;
+        _controlsPanel.OffsetRight = -16;
+        _controlsPanel.OffsetTop = -16;
+        _controlsPanel.OffsetBottom = -16;
+        _controlsPanel.GrowHorizontal = Control.GrowDirection.Begin;
         _controlsPanel.GrowVertical = Control.GrowDirection.Begin;
         AddChild(_controlsPanel);
 

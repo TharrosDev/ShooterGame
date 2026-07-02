@@ -26,7 +26,10 @@ namespace Embervale.UI;
 /// </summary>
 public partial class GameHud : CanvasLayer
 {
-    private HudLayout _layout = null!;
+    private readonly HudLayout _layout = new();
+
+    /// <summary>The bottom-bar dock the quick-use hotbar parents into (see HudLayout.BottomDock).</summary>
+    public Control BottomDock => _layout.BottomDock;
     private IEntity? _player;
     private WorldClock? _clock;
     private WeatherDirector? _weather;
@@ -94,7 +97,6 @@ public partial class GameHud : CanvasLayer
 
     public override void _Ready()
     {
-        _layout = new HudLayout { Name = "Layout" };
         AddChild(_layout);
 
         BuildVignette(); // backmost overlay — built first so the HUD widgets draw over it

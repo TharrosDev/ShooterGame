@@ -29,7 +29,7 @@ public partial class QuestLogPanel : CanvasLayer
         // position that drifted off-screen when the viewport stretched).
         _panel.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
         _panel.OffsetLeft = 16;
-        _panel.OffsetTop = 16;
+        _panel.OffsetTop = 64; // below the GameHud's top-left clock/weather widget (30.5B)
         _panel.CustomMinimumSize = new Vector2(360, 0);
         AddChild(_panel);
 

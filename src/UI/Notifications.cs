@@ -19,16 +19,20 @@ public partial class Notifications : CanvasLayer
 
     public override void _Ready()
     {
+        // Top-right, below the quest tracker — the top-centre column belongs to the boss bar /
+        // event banner / nameplate stack (30.5B), which toasts used to overlap.
         _stack = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        _stack.AddThemeConstantOverride("separation", 6);
-        _stack.AnchorLeft = 0.5f;
-        _stack.AnchorRight = 0.5f;
+        _stack.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        _stack.AnchorLeft = 1f;
+        _stack.AnchorRight = 1f;
         _stack.AnchorTop = 0f;
         _stack.AnchorBottom = 0f;
-        _stack.GrowHorizontal = Control.GrowDirection.Both;
+        _stack.GrowHorizontal = Control.GrowDirection.Begin;
         _stack.GrowVertical = Control.GrowDirection.End;
-        _stack.OffsetTop = 110;
-        _stack.Alignment = BoxContainer.AlignmentMode.Center;
+        _stack.OffsetLeft = -UiTheme.SpaceLg;
+        _stack.OffsetRight = -UiTheme.SpaceLg;
+        _stack.OffsetTop = 190;
+        _stack.OffsetBottom = 190;
         AddChild(_stack);
 
         EventBus bus = EventBus.Instance;

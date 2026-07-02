@@ -16,8 +16,14 @@ public partial class HotbarPanel : CanvasLayer
 {
     private HotbarComponent? _hotbar;
     private InventoryComponent? _inventory;
+    private PanelContainer _panel = null!;
     private HBoxContainer _row = null!;
     private bool _dirty = true;
+
+    /// <summary>When set (by the bootstrap, to <see cref="GameHud.BottomDock"/>), the bar parents
+    /// into the HUD's bottom flow bar instead of anchoring itself — flow siblings can't overlap
+    /// the vitals at any UI scale. Null falls back to self-anchoring (kept for tests/tools).</summary>
+    public Control? Dock { get; set; }
 
     public void SetHotbar(HotbarComponent? hotbar)
     {
@@ -33,15 +39,22 @@ public partial class HotbarPanel : CanvasLayer
 
     public override void _Ready()
     {
-        PanelContainer panel = UiTheme.Panel();
-        panel.AnchorLeft = 0.5f;
-        panel.AnchorRight = 0.5f;
-        panel.AnchorTop = 1f;
-        panel.AnchorBottom = 1f;
-        panel.GrowHorizontal = Control.GrowDirection.Both;
-        panel.GrowVertical = Control.GrowDirection.Begin;
-        panel.OffsetBottom = -12f;
-        AddChild(panel);
+        PanelContainer panel = _panel = UiTheme.Panel();
+        if (Dock != null)
+        {
+            Dock.AddChild(panel);
+        }
+        else
+        {
+            panel.AnchorLeft = 0.5f;
+            panel.AnchorRight = 0.5f;
+            panel.AnchorTop = 1f;
+            panel.AnchorBottom = 1f;
+            panel.GrowHorizontal = Control.GrowDirection.Both;
+            panel.GrowVertical = Control.GrowDirection.Begin;
+            panel.OffsetBottom = -12f;
+            AddChild(panel);
+        }
 
         MarginContainer pad = UiTheme.Padding(8);
         panel.AddChild(pad);
@@ -75,7 +88,8 @@ public partial class HotbarPanel : CanvasLayer
     public override void _Process(double delta)
     {
         bool playing = GameManager.Instance is { IsPlaying: true };
-        Visible = playing;
+        // Toggle the panel, not this layer — when docked the panel lives under the GameHud layer.
+        _panel.Visible = playing;
         if (!_dirty || !playing)
         {
             return;
@@ -109,7 +123,7 @@ public partial class HotbarPanel : CanvasLayer
             }
 
             Button cell = UiTheme.Action(text);
-            cell.CustomMinimumSize = new Vector2(112f, 0f);
+            cell.CustomMinimumSize = new Vector2(88f, 0f);
             cell.TooltipText = Loc.T("hud.hotbar_hint");
             int slot = i;
             cell.Pressed += () => _hotbar?.Clear(slot);

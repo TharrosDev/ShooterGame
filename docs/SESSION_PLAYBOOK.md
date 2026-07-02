@@ -1939,8 +1939,18 @@ no code) — batch them when momentum is good.
     several showed at once. **UI scale made real:** the previously-dead `Settings.UiScale`
     (0.75–1.5 slider, Phase 24F) now drives `Window.ContentScaleFactor` in
     `SettingsService.ApplyGraphics` — with the project's `canvas_items` stretch this scales
-    every 2D surface live, no per-widget math. Build + 313 tests green; verified in-engine
-    during a live maintainer play session (save loaded, town hub streamed, HUD up, no errors).
+    every 2D surface live, no per-widget math. **Bring-up findings (live maintainer
+    playtest):** anchors applied *after* tree entry resolved against a stale zero rect and
+    dumped every widget at the origin — `HudLayout` now builds fully in its constructor
+    ("build detached, then add", §6). The bottom edge became a full-width **flow bar**
+    (vitals left, twin spacers centring a `BottomDock` the quick-use hotbar parents into via
+    `HotbarPanel.Dock`) after the maintainer hit the hotbar/vitals overlap at 1.5× UI scale —
+    flow siblings can't overlap at any scale/resolution (hotbar cells 112→88 px, and its
+    visibility toggle moved from the layer to the docked panel). Placement sweep across all
+    other surfaces: toasts moved top-centre→top-right (the centre column belongs to the
+    boss/banner/nameplate stack), the F3 DebugHud readout dropped below the clock widget and
+    its controls hint moved to bottom-right, the journal overlay dropped below the clock.
+    Build + 313 tests green; verified across three live maintainer play sessions.
 - [ ] **30.5C — Core HUD widgets rebuilt** `[F/P]`
   - **Done when:** vitals (health/stamina/mana), prepared spell + cooldown, status effects,
     and the crosshair are rebuilt on the tokens with value-change juice.

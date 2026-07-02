@@ -36,8 +36,13 @@ public partial class HudLayout : Control
     /// <summary>Top-right stack (quest tracker).</summary>
     public VBoxContainer TopRight { get; private set; } = null!;
 
-    /// <summary>Bottom-left stack (vitals).</summary>
+    /// <summary>Bottom-left stack (vitals) — first cell of the bottom flow bar.</summary>
     public VBoxContainer BottomLeft { get; private set; } = null!;
+
+    /// <summary>Dock for the quick-use hotbar, centred in the bottom bar's free space. A flow
+    /// sibling of <see cref="BottomLeft"/>, so the hotbar and vitals can never overlap at any
+    /// UI scale or resolution.</summary>
+    public VBoxContainer BottomDock { get; private set; } = null!;
 
     /// <summary>Bottom-centre stack (interaction prompt), floated above the screen edge.</summary>
     public VBoxContainer BottomCenter { get; private set; } = null!;
@@ -46,8 +51,12 @@ public partial class HudLayout : Control
     /// full-screen overlays (vignette, fades). Not inset by the safe margin.</summary>
     public Control Overlay { get; private set; } = null!;
 
-    public override void _Ready()
+    // Built in the constructor ("build detached, then add", CLAUDE.md §6) so the root's and every
+    // slot's anchors are configured BEFORE tree entry — anchors applied to an already-entered
+    // control resolved against a stale zero rect and dumped every widget at the origin.
+    public HudLayout()
     {
+        Name = "Layout";
         SetAnchorsPreset(LayoutPreset.FullRect);
         MouseFilter = MouseFilterEnum.Ignore;
 
@@ -58,8 +67,44 @@ public partial class HudLayout : Control
         TopLeft = Slot("TopLeft", horizontal: 0f, vertical: 0f);
         TopCenter = Slot("TopCenter", horizontal: 0.5f, vertical: 0f);
         TopRight = Slot("TopRight", horizontal: 1f, vertical: 0f);
-        BottomLeft = Slot("BottomLeft", horizontal: 0f, vertical: 1f);
         BottomCenter = Slot("BottomCenter", horizontal: 0.5f, vertical: 1f, extraLift: BottomCenterLift);
+
+        // The bottom edge is a full-width flow bar: vitals left, the hotbar dock centred in the
+        // remaining space by twin spacers. Flow layout means these can never overlap, no matter
+        // how small the effective viewport gets (high UI scale, low resolution, Steam Deck).
+        var bar = new HBoxContainer { Name = "BottomBar", MouseFilter = MouseFilterEnum.Ignore };
+        bar.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        bar.AnchorLeft = 0f;
+        bar.AnchorRight = 1f;
+        bar.AnchorTop = 1f;
+        bar.AnchorBottom = 1f;
+        bar.OffsetLeft = SafeMargin;
+        bar.OffsetRight = -SafeMargin;
+        bar.OffsetTop = -SafeMargin;
+        bar.OffsetBottom = -SafeMargin;
+        bar.GrowVertical = GrowDirection.Begin;
+        AddChild(bar);
+
+        BottomLeft = new VBoxContainer
+        {
+            Name = "BottomLeft",
+            MouseFilter = MouseFilterEnum.Ignore,
+            SizeFlagsVertical = SizeFlags.ShrinkEnd,
+        };
+        BottomLeft.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        bar.AddChild(BottomLeft);
+
+        bar.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
+
+        BottomDock = new VBoxContainer
+        {
+            Name = "BottomDock",
+            MouseFilter = MouseFilterEnum.Ignore,
+            SizeFlagsVertical = SizeFlags.ShrinkEnd,
+        };
+        bar.AddChild(BottomDock);
+
+        bar.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
     }
 
     /// <summary>A stacked slot pinned to a corner/edge. <paramref name="horizontal"/> and
