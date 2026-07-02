@@ -1,35 +1,80 @@
+using Embervale.Core.Services;
+using Embervale.Settings;
 using Godot;
 
 namespace Embervale.UI;
 
 /// <summary>
-/// One place for the look-and-feel of the (still debug-grade) overlay UI: a shared
-/// palette plus small builders for the controls every panel uses — a framed panel, a
-/// header, a body line, an action button and a coloured resource bar. Centralising it
-/// here keeps the HUD, character screen, journal and dialogue window visually
-/// consistent and makes a later full UI pass a matter of changing one file.
+/// The UI design tokens and widget builders (Phase 30.5A) — the single source of truth every
+/// surface answers to. Tokens (palette, type scale, spacing, radius, motion) encode the
+/// dying-world identity pinned in <c>docs/UI_STYLE.md</c> (ash neutrals, bone-pale text,
+/// ember accents — matched to <c>docs/ART_STYLE.md</c>); the builders below compose them into
+/// the controls every panel uses. Change a token here and the whole UI follows.
 /// </summary>
 public static class UiTheme
 {
-    // --- Palette ------------------------------------------------------------
-    public static readonly Color PanelBg = new(0.07f, 0.08f, 0.11f, 0.90f);
-    public static readonly Color PanelBorder = new(0.30f, 0.34f, 0.44f, 0.85f);
-    public static readonly Color Accent = new(0.95f, 0.82f, 0.42f); // gold headers
-    public static readonly Color Text = new(0.88f, 0.90f, 0.94f);
-    public static readonly Color Dim = new(0.60f, 0.64f, 0.72f);
-    public static readonly Color Good = new(0.55f, 0.80f, 0.55f);
-    public static readonly Color Bad = new(0.86f, 0.46f, 0.46f);
+    // --- Palette tokens (see docs/UI_STYLE.md §2) -----------------------------
+    // Surfaces: warm charcoal ash, never blue-black.
+    public static readonly Color PanelBg = new(0.09f, 0.085f, 0.075f, 0.92f);
+    public static readonly Color PanelBorder = new(0.42f, 0.40f, 0.35f, 0.80f);
+    public static readonly Color Trough = new(0.13f, 0.125f, 0.115f, 0.95f);
+
+    // Text: bone pale primary, ash-grey secondary.
+    public static readonly Color Text = new(0.79f, 0.75f, 0.68f);
+    public static readonly Color Dim = new(0.55f, 0.53f, 0.47f);
+
+    // Accents: ember gold is THE accent (headers, highlights, focus); ember orange is
+    // reserved for the hottest emphasis (crits, warnings, the Flamebearer thread).
+    public static readonly Color Accent = new(0.85f, 0.64f, 0.25f);
+    public static readonly Color AccentHot = new(0.91f, 0.45f, 0.17f);
+
+    // Semantic feedback.
+    public static readonly Color Good = new(0.55f, 0.68f, 0.44f);
+    public static readonly Color Bad = new(0.82f, 0.42f, 0.36f);
 
     // Resource bar fills.
-    public static readonly Color Health = new(0.80f, 0.28f, 0.30f);
-    public static readonly Color Stamina = new(0.78f, 0.66f, 0.28f);
-    public static readonly Color Mana = new(0.34f, 0.55f, 0.86f);
+    public static readonly Color Health = new(0.78f, 0.30f, 0.26f);
+    public static readonly Color Stamina = new(0.80f, 0.66f, 0.30f);
+    public static readonly Color Mana = new(0.42f, 0.56f, 0.76f);
 
-    // The corruption identity (dark blood-red); the gauge fill and the HUD vignette.
-    public static readonly Color Corruption = new(0.45f, 0.05f, 0.07f);
+    // The corruption identity — the art bible's corruption violet (ART_STYLE §2), used by
+    // the gauge fill and the HUD vignette.
+    public static readonly Color Corruption = new(0.48f, 0.30f, 0.55f);
 
-    public const int HeaderFontSize = 16;
+    // --- Type scale ----------------------------------------------------------
+    public const int CaptionFontSize = 11;
     public const int BodyFontSize = 14;
+    public const int HeaderFontSize = 16;
+    public const int TitleFontSize = 20;
+    public const int DisplayFontSize = 26;
+
+    // --- Spacing scale (px at reference scale) ---------------------------------
+    public const int SpaceXs = 4;
+    public const int SpaceSm = 6;
+    public const int SpaceMd = 10;
+    public const int SpaceLg = 16;
+    public const int SpaceXl = 24;
+
+    // --- Radii -----------------------------------------------------------------
+    public const int RadiusSm = 3;
+    public const int RadiusMd = 4;
+    public const int RadiusLg = 6;
+
+    // --- Motion tokens -----------------------------------------------------------
+    // Durations in seconds; always route through Duration() so the reduced-motion
+    // accessibility setting (Settings.ReducedMotion) collapses animation to instant.
+    public const float DurationFast = 0.12f;
+    public const float DurationBase = 0.20f;
+    public const float DurationSlow = 0.35f;
+
+    /// <summary>False while the player has reduced motion enabled in settings.</summary>
+    public static bool MotionEnabled =>
+        ServiceLocator.Instance is not { } locator ||
+        !locator.TryGet(out SettingsService settings) ||
+        !settings.Current.ReducedMotion;
+
+    /// <summary>A motion duration honouring the reduced-motion setting (0 = instant).</summary>
+    public static float Duration(float seconds) => MotionEnabled ? seconds : 0f;
 
     // --- Builders -----------------------------------------------------------
 
@@ -42,7 +87,7 @@ public static class UiTheme
     }
 
     /// <summary>The standard inner padding container panels wrap their content in.</summary>
-    public static MarginContainer Padding(int amount = 10)
+    public static MarginContainer Padding(int amount = SpaceMd)
     {
         var margin = new MarginContainer();
         margin.AddThemeConstantOverride("margin_left", amount + 2);
@@ -68,14 +113,19 @@ public static class UiTheme
         return label;
     }
 
+    /// <summary>A small secondary line (slot numbers, hints, metadata).</summary>
+    public static Label Caption(string text, Color? color = null)
+    {
+        var label = new Label { Text = text };
+        label.AddThemeFontSizeOverride("font_size", CaptionFontSize);
+        label.AddThemeColorOverride("font_color", color ?? Dim);
+        return label;
+    }
+
     public static Button Action(string text)
     {
         var button = new Button { Text = text };
-        button.AddThemeColorOverride("font_color", Text);
-        button.AddThemeColorOverride("font_hover_color", Accent);
-        button.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.16f, 0.18f, 0.23f, 0.95f)));
-        button.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.22f, 0.25f, 0.31f, 0.98f)));
-        button.AddThemeStyleboxOverride("pressed", ButtonStyle(new Color(0.12f, 0.14f, 0.18f, 0.98f)));
+        ApplyInteractiveStyle(button);
         return button;
     }
 
@@ -90,7 +140,7 @@ public static class UiTheme
             ShowPercentage = false,
             CustomMinimumSize = new Vector2(width, 13f),
         };
-        bar.AddThemeStyleboxOverride("background", BarStyle(new Color(0.14f, 0.15f, 0.18f, 0.95f)));
+        bar.AddThemeStyleboxOverride("background", BarStyle(Trough));
         bar.AddThemeStyleboxOverride("fill", BarStyle(fill));
         return bar;
     }
@@ -125,11 +175,7 @@ public static class UiTheme
     public static OptionButton Dropdown(string[] options, int selected)
     {
         var option = new OptionButton();
-        option.AddThemeColorOverride("font_color", Text);
-        option.AddThemeColorOverride("font_hover_color", Accent);
-        option.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.16f, 0.18f, 0.23f, 0.95f)));
-        option.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.22f, 0.25f, 0.31f, 0.98f)));
-        option.AddThemeStyleboxOverride("pressed", ButtonStyle(new Color(0.12f, 0.14f, 0.18f, 0.98f)));
+        ApplyInteractiveStyle(option);
         for (int i = 0; i < options.Length; i++)
         {
             option.AddItem(options[i], i);
@@ -150,15 +196,31 @@ public static class UiTheme
     {
         var box = new StyleBoxFlat { BgColor = PanelBg, BorderColor = PanelBorder };
         box.SetBorderWidthAll(1);
-        box.SetCornerRadiusAll(6);
+        box.SetCornerRadiusAll(RadiusLg);
         return box;
+    }
+
+    /// <summary>The shared normal/hover/pressed/focus styling for clickable controls. Focus
+    /// draws an ember border — the visibility seam the gamepad navigation pass (30.5J) rides.</summary>
+    private static void ApplyInteractiveStyle(Button button)
+    {
+        button.AddThemeColorOverride("font_color", Text);
+        button.AddThemeColorOverride("font_hover_color", Accent);
+        button.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.16f, 0.15f, 0.13f, 0.95f)));
+        button.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.23f, 0.21f, 0.18f, 0.98f)));
+        button.AddThemeStyleboxOverride("pressed", ButtonStyle(new Color(0.11f, 0.10f, 0.09f, 0.98f)));
+
+        StyleBoxFlat focus = ButtonStyle(new Color(0.16f, 0.15f, 0.13f, 0.95f));
+        focus.BorderColor = Accent;
+        focus.SetBorderWidthAll(1);
+        button.AddThemeStyleboxOverride("focus", focus);
     }
 
     private static StyleBoxFlat ButtonStyle(Color color)
     {
         var box = new StyleBoxFlat { BgColor = color };
-        box.SetCornerRadiusAll(4);
-        box.SetContentMarginAll(4);
+        box.SetCornerRadiusAll(RadiusMd);
+        box.SetContentMarginAll(SpaceXs);
         box.ContentMarginLeft = 9;
         box.ContentMarginRight = 9;
         return box;
@@ -167,7 +229,7 @@ public static class UiTheme
     private static StyleBoxFlat BarStyle(Color color)
     {
         var box = new StyleBoxFlat { BgColor = color };
-        box.SetCornerRadiusAll(3);
+        box.SetCornerRadiusAll(RadiusSm);
         return box;
     }
 }
