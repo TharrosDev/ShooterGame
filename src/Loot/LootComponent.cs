@@ -90,9 +90,10 @@ public partial class LootComponent : EntityComponent
         Log.Info($"{Entity.DisplayName} dropped {drops.Count} item(s).");
     }
 
-    private static Vector3 ScatterAround(Vector3 origin, int index)
+    /// <summary>Spirals drop positions outward from <paramref name="origin"/> so multiple items
+    /// don't stack on one spot (shared with container looting).</summary>
+    internal static Vector3 ScatterAround(Vector3 origin, int index)
     {
-        // Spiral the drops outward so multiple items don't stack on one spot.
         float angle = index * 2.39996f; // golden angle for an even spread
         float radius = 0.4f + (index * 0.25f);
         return new Vector3(
