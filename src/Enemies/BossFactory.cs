@@ -108,6 +108,7 @@ public static class BossFactory
         });
 
         boss.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
+        boss.AddChild(new StatusEffectVfxComponent { Name = "StatusVfx" });
         boss.AddChild(new FactionComponent { Name = "Faction", FactionId = GameIds.Factions.Fallen });
         // Reuse the standard AI, tuned for a boss: long sight, bigger reach, never flees.
         boss.AddChild(new EnemyAIComponent

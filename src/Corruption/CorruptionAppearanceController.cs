@@ -75,21 +75,39 @@ public partial class CorruptionAppearanceController : EntityComponent
 
     /// <summary>Placeholder per-tier look: skin fades toward ash, the ember glow rises. Phase 30
     /// replaces these stand-ins with authored materials/VFX (see the class hook note).</summary>
+    /// <summary>The ART_STYLE §2.2 corruption arc, per tier (30I): how far the body ashes, an extra
+    /// skin tint (violet veining early, char late), and the skin emissive (violet → ember).</summary>
+    private static (float AshT, Color SkinTint, float TintT, Color Emission, float Energy) LookFor(CorruptionTier tier) => tier switch
+    {
+        CorruptionTier.Touched => (0.06f, new Color(0.48f, 0.30f, 0.55f), 0.14f, new Color(0.38f, 0.22f, 0.48f), 0.10f),
+        CorruptionTier.Marked => (0.24f, new Color(0.42f, 0.38f, 0.40f), 0.28f, new Color(0.55f, 0.20f, 0.10f), 0.18f),
+        CorruptionTier.Ashbound => (0.45f, new Color(0.20f, 0.16f, 0.15f), 0.40f, new Color(0.72f, 0.28f, 0.06f), 0.40f),
+        CorruptionTier.Embers => (0.62f, new Color(0.12f, 0.09f, 0.09f), 0.55f, new Color(0.82f, 0.34f, 0.10f), 0.70f),
+        _ => (0f, Colors.White, 0f, Colors.Black, 0f),
+    };
+
     private void Apply(CorruptionTier tier)
     {
-        float t = (int)tier / 4f; // 0 Untainted … 4 Embers
+        (float ashT, Color skinTint, float tintT, Color emission, float energy) = LookFor(tier);
         Color ash = new(0.20f, 0.17f, 0.17f);
 
         foreach ((StandardMaterial3D material, Color baseAlbedo, bool isSkin) in _surfaces)
         {
-            // Each authored colour fades toward the same dark ash as corruption deepens.
-            material.AlbedoColor = baseAlbedo.Lerp(ash, t * 0.7f);
+            // Clothing/gear only gathers ash; skin additionally takes the tier's tint
+            // (violet veining while Touched, ash-grey patches Marked, char toward Embers).
+            Color albedo = baseAlbedo.Lerp(ash, ashT);
+            if (isSkin)
+            {
+                albedo = albedo.Lerp(skinTint, tintT);
+            }
 
-            // A dim ember-vein emissive on SKIN only (eye-glow / banked-coal veins per
-            // ART_STYLE §2.2); off while Untainted. Real per-tier materials/VFX are 30I.
-            material.EmissionEnabled = isSkin && tier != CorruptionTier.Untainted;
-            material.Emission = new Color(0.55f, 0.16f, 0.04f);
-            material.EmissionEnergyMultiplier = isSkin ? t * 0.35f : 0f;
+            material.AlbedoColor = albedo;
+
+            // The emissive rises through the arc on skin only: faint violet at Touched,
+            // turning ember and brightening toward Embers ("skin like banked coals").
+            material.EmissionEnabled = isSkin && energy > 0f;
+            material.Emission = emission;
+            material.EmissionEnergyMultiplier = isSkin ? energy : 0f;
         }
     }
 }
