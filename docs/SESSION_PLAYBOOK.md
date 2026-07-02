@@ -1884,6 +1884,26 @@ no code) — batch them when momentum is good.
     README, ARCHITECTURE, LORE, ROADMAP: "first-person … third-person body retained for
     cutscenes"). Build + 313 tests green; verified live in-engine — the maintainer
     played first-person combat during the run, no errors.
+- [x] **30L — Maintainer playability pass: lamps, FP arms, loot chests, visibility** `[P/F]` ✅
+  - **Goal (maintainer-directed, 2026-07-02):** finish the playability batch cut short by a
+    session limit — village/map lighting, first-person hands, a roomier inventory, and
+    enemies readable through the fog (without losing the fog's mood).
+  - **Done:** six `prp_lamp_post` instances placed around the town hub square (navmesh-carving
+    colliders + warm `OmniLight3D` at the lantern, shadows off), plus firelight on the
+    wilds-west campfire and the arena challenge brazier — the world's first point lights.
+    First-person viewmodel (`FirstPersonArmsComponent`): `fp_arm.glb` pair riding the camera,
+    right hand carrying the sword model, all-procedural motion (speed-driven walk bob,
+    `AttackPerformedEvent` slash arc alternating with combo index, raised guard while
+    blocking); the skeleton-held sword is now shadows-only in FP so it isn't doubled.
+    Inventory/character screen fills the view with a 70 px gutter (full-rect anchors, scroll
+    expands) instead of the old 440 px column. Fog weather density 0.04 → 0.025 so enemies
+    resolve at combat range while the ashen veil (haze floor untouched) keeps the mood —
+    pairs with 30J's emissive goblin eyes. Also landed from the cut-short session:
+    `ContainerLootComponent` (E loots the supply cache's inventory into the player's, seeded
+    potions + gold on fresh spawns). Build + 313 tests green; boot + `ContentValidator` OK
+    in-engine; all three edited cells headless-instantiated clean (6+1+1 lights verified).
+    The FP-arm motion itself is reviewed against the Godot 4.7 C# API — maintainer playtest
+    pending.
 
 ---
 

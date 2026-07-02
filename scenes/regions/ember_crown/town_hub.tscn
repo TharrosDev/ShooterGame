@@ -20,6 +20,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="18_npc_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="19_npc_inn"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_relic.glb" id="20_relic"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="21_lamp"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -124,6 +125,10 @@ emission_enabled = true
 emission = Color(0.2, 0.42, 0.4, 1)
 emission_energy_multiplier = 0.25
 
+[sub_resource type="CylinderShape3D" id="Shape_lamp"]
+radius = 0.25
+height = 3.6
+
 [sub_resource type="BoxMesh" id="Mesh_banner"]
 size = Vector3(0.5, 3, 0.12)
 
@@ -186,6 +191,96 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, -22)
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/BuildingSE/BuildingSECol"]
 shape = SubResource("Shape_bldgB")
+
+[node name="LampSW" type="Node3D" parent="Nav"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -4, 0, 2)
+
+[node name="LampSWCol" type="StaticBody3D" parent="Nav/LampSW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/LampSW/LampSWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+shape = SubResource("Shape_lamp")
+
+[node name="Light" type="OmniLight3D" parent="Nav/LampSW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 0.56)
+light_color = Color(1, 0.65, 0.32, 1)
+light_energy = 2.5
+omni_range = 9.0
+
+[node name="LampSE" type="Node3D" parent="Nav"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 0, 2)
+
+[node name="LampSECol" type="StaticBody3D" parent="Nav/LampSE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/LampSE/LampSECol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+shape = SubResource("Shape_lamp")
+
+[node name="Light" type="OmniLight3D" parent="Nav/LampSE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 0.56)
+light_color = Color(1, 0.65, 0.32, 1)
+light_energy = 2.5
+omni_range = 9.0
+
+[node name="LampW" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -8, 0, -12)
+
+[node name="LampWCol" type="StaticBody3D" parent="Nav/LampW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/LampW/LampWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+shape = SubResource("Shape_lamp")
+
+[node name="Light" type="OmniLight3D" parent="Nav/LampW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 0.56)
+light_color = Color(1, 0.65, 0.32, 1)
+light_energy = 2.5
+omni_range = 9.0
+
+[node name="LampE" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 8, 0, -12)
+
+[node name="LampECol" type="StaticBody3D" parent="Nav/LampE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/LampE/LampECol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+shape = SubResource("Shape_lamp")
+
+[node name="Light" type="OmniLight3D" parent="Nav/LampE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 0.56)
+light_color = Color(1, 0.65, 0.32, 1)
+light_energy = 2.5
+omni_range = 9.0
+
+[node name="LampNW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -24)
+
+[node name="LampNWCol" type="StaticBody3D" parent="Nav/LampNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/LampNW/LampNWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+shape = SubResource("Shape_lamp")
+
+[node name="Light" type="OmniLight3D" parent="Nav/LampNW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 0.56)
+light_color = Color(1, 0.65, 0.32, 1)
+light_energy = 2.5
+omni_range = 9.0
+
+[node name="LampNE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -24)
+
+[node name="LampNECol" type="StaticBody3D" parent="Nav/LampNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/LampNE/LampNECol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+shape = SubResource("Shape_lamp")
+
+[node name="Light" type="OmniLight3D" parent="Nav/LampNE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 0.56)
+light_color = Color(1, 0.65, 0.32, 1)
+light_energy = 2.5
+omni_range = 9.0
 
 [node name="Waystone" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4)
@@ -475,3 +570,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
 [node name="Model" parent="StationAlchemy" instance=ExtResource("15_alchemy")]
 
 [node name="Model" parent="Relic" instance=ExtResource("20_relic")]
+
+[node name="Model" parent="Nav/LampSW" instance=ExtResource("21_lamp")]
+
+[node name="Model" parent="Nav/LampSE" instance=ExtResource("21_lamp")]
+
+[node name="Model" parent="Nav/LampW" instance=ExtResource("21_lamp")]
+
+[node name="Model" parent="Nav/LampE" instance=ExtResource("21_lamp")]
+
+[node name="Model" parent="Nav/LampNW" instance=ExtResource("21_lamp")]
+
+[node name="Model" parent="Nav/LampNE" instance=ExtResource("21_lamp")]

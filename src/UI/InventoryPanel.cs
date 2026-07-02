@@ -49,27 +49,31 @@ public partial class InventoryPanel : CanvasLayer
         (CharTab.Perks, "char.tab_perks"),
     };
 
-    private const float PanelWidth = 440f;
+    /// <summary>Screen-edge gutter so the panel fills the view without covering it entirely.</summary>
+    private const float ScreenMargin = 70f;
 
     public override void _Ready()
     {
         _panel = UiTheme.Panel();
         _panel.Visible = false;
-        // Centered on screen (a modal — it frees the mouse via UiState). Anchored rather than absolute
-        // so it stays on-screen and centered at any resolution (the viewport stretches via
-        // canvas_items/expand; an absolute position would drift off-screen).
-        _panel.SetAnchorsPreset(Control.LayoutPreset.Center);
-        // Grow from the centre anchor in both directions so it's truly centred (the default End grow
-        // would push it toward the bottom-right of centre).
-        _panel.GrowHorizontal = Control.GrowDirection.Both;
-        _panel.GrowVertical = Control.GrowDirection.Both;
-        _panel.CustomMinimumSize = new Vector2(PanelWidth, 0f);
+        // Fills the screen with a medium gutter (a modal — it frees the mouse via UiState).
+        // Anchored full-rect with fixed offsets so it tracks any resolution (the viewport
+        // stretches via canvas_items/expand).
+        _panel.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _panel.OffsetLeft = ScreenMargin;
+        _panel.OffsetTop = ScreenMargin;
+        _panel.OffsetRight = -ScreenMargin;
+        _panel.OffsetBottom = -ScreenMargin;
         AddChild(_panel);
 
         MarginContainer margin = UiTheme.Padding(12);
         _panel.AddChild(margin);
 
-        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        var column = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
         column.AddThemeConstantOverride("separation", 6);
         margin.AddChild(column);
 
@@ -79,10 +83,11 @@ public partial class InventoryPanel : CanvasLayer
         column.AddChild(_tabBar);
         BuildTabBar();
 
-        // A bounded scroll area so a full backpack / spell list never runs off-screen.
+        // A scroll area filling the panel so a full backpack / spell list never runs off-screen.
         var scroll = new ScrollContainer
         {
-            CustomMinimumSize = new Vector2(PanelWidth - 28, 520),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
         };
         column.AddChild(scroll);

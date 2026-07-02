@@ -877,7 +877,22 @@ public partial class GameBootstrap : Node3D
         cache.AddChild(collider);
 
         // A persistent container's contents round-trip through the inventory save path.
-        cache.AddChild(new InventoryComponent { Name = "Inventory", Capacity = 12 });
+        var inventory = new InventoryComponent { Name = "Inventory", Capacity = 12 };
+        cache.AddChild(inventory);
+
+        // 30L: chests are lootable — E transfers the contents to the player. Seed starter loot on
+        // a fresh spawn; a save's restored (possibly emptied) contents overwrite this on load.
+        cache.AddChild(new ContainerLootComponent { Name = "Loot" });
+        if (ItemDatabase.Get(GameIds.Items.HealthPotion) is { } potion)
+        {
+            inventory.AddItem(potion, 2);
+        }
+
+        if (ItemDatabase.Get(GameIds.Currency.Gold) is { } gold)
+        {
+            inventory.AddItem(gold, 20);
+        }
+
         return cache;
     }
 
