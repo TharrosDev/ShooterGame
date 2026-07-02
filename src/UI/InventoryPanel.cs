@@ -15,12 +15,11 @@ namespace Embervale.UI;
 /// <summary>
 /// The character screen: toggled with the <c>inventory</c> action, it shows the
 /// equipment slots (with Unequip buttons) and the backpack contents (with Equip
-/// buttons on equippable stacks). While open it frees the mouse and sets
-/// <see cref="UiState.MenuOpen"/> so the player controller stops driving the
-/// character. Rebuilt from a dirty flag in <c>_Process</c> (never during a button
-/// signal) to avoid freeing a control mid-callback.
+/// buttons on equippable stacks). Built on the 30.5F <see cref="UiPanel"/> framework
+/// (the proving port): the base owns the modal contract, the toggle input, and the
+/// dirty-flag rebuild loop; tabs ride the shared <see cref="UiTabs"/> strip.
 /// </summary>
-public partial class InventoryPanel : CanvasLayer
+public partial class InventoryPanel : UiPanel
 {
     private InventoryComponent? _inventory;
     private EquipmentComponent? _equipment;
@@ -30,16 +29,14 @@ public partial class InventoryPanel : CanvasLayer
     private SpellcastingComponent? _spellcasting;
     private ReputationComponent? _reputation;
     private CorruptionComponent? _corruption;
-    private PanelContainer _panel = null!;
-    private HBoxContainer _tabBar = null!;
+    private UiTabs _tabs = null!;
     private VBoxContainer _list = null!;
-    private bool _dirty = true;
 
-    /// <summary>The character screen's tabs (Phase 29.5 spell tab + split progression/perks).</summary>
+    /// <summary>The character screen's tabs (Phase 29.5 spell tab + split progression/perks) —
+    /// indices match the <see cref="UiTabs"/> order built in <see cref="BuildShell"/>.</summary>
     private enum CharTab { Gear, Spells, Progression, Perks }
 
     private CharTab _activeTab = CharTab.Gear;
-    private readonly Dictionary<CharTab, Button> _tabButtons = new();
 
     private static readonly (CharTab Tab, string Key)[] TabDefs =
     {
@@ -52,50 +49,48 @@ public partial class InventoryPanel : CanvasLayer
     /// <summary>Screen-edge gutter so the panel fills the view without covering it entirely.</summary>
     private const float ScreenMargin = 70f;
 
-    public override void _Ready()
+    protected override string? ToggleAction => GameInput.Inventory;
+
+    protected override void BuildShell(PanelContainer shell)
     {
-        _panel = UiTheme.Panel();
-        _panel.Visible = false;
-        // Fills the screen with a medium gutter (a modal — it frees the mouse via UiState).
-        // Anchored full-rect with fixed offsets so it tracks any resolution (the viewport
-        // stretches via canvas_items/expand).
-        _panel.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        _panel.OffsetLeft = ScreenMargin;
-        _panel.OffsetTop = ScreenMargin;
-        _panel.OffsetRight = -ScreenMargin;
-        _panel.OffsetBottom = -ScreenMargin;
-        AddChild(_panel);
+        // Fills the screen with a medium gutter, anchored so it tracks any resolution.
+        shell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        shell.OffsetLeft = ScreenMargin;
+        shell.OffsetTop = ScreenMargin;
+        shell.OffsetRight = -ScreenMargin;
+        shell.OffsetBottom = -ScreenMargin;
 
         MarginContainer margin = UiTheme.Padding(12);
-        _panel.AddChild(margin);
+        shell.AddChild(margin);
 
         var column = new VBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        column.AddThemeConstantOverride("separation", 6);
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
-        // Tab row (Gear · Spells · Progression · Perks) — built once; only _list is rebuilt per tab.
-        _tabBar = new HBoxContainer();
-        _tabBar.AddThemeConstantOverride("separation", 4);
-        column.AddChild(_tabBar);
-        BuildTabBar();
-
-        // A scroll area filling the panel so a full backpack / spell list never runs off-screen.
-        var scroll = new ScrollContainer
+        // Tab row (Gear · Spells · Progression · Perks) — built once; only _list rebuilds per tab.
+        _tabs = new UiTabs();
+        foreach ((CharTab _, string key) in TabDefs)
         {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            _tabs.Add(Loc.T(key));
+        }
+
+        _tabs.TabChanged += index =>
+        {
+            _activeTab = TabDefs[index].Tab;
+            MarkDirty();
         };
+        column.AddChild(_tabs);
+
+        (ScrollContainer scroll, _list) = UiTheme.ScrollList();
         column.AddChild(scroll);
+    }
 
-        _list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        _list.AddThemeConstantOverride("separation", 3);
-        scroll.AddChild(_list);
-
+    protected override void OnReady()
+    {
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnChanged);
         EventBus.Instance?.Subscribe<SpellsChangedEvent>(OnSpellsChanged);
         EventBus.Instance?.Subscribe<EquipmentChangedEvent>(OnEquipmentChanged);
@@ -121,128 +116,70 @@ public partial class InventoryPanel : CanvasLayer
     public void SetInventory(InventoryComponent? inventory)
     {
         _inventory = inventory;
-        _dirty = true;
+        MarkDirty();
     }
 
     public void SetEquipment(EquipmentComponent? equipment)
     {
         _equipment = equipment;
-        _dirty = true;
+        MarkDirty();
     }
 
     public void SetHotbar(HotbarComponent? hotbar)
     {
         _hotbar = hotbar;
-        _dirty = true;
+        MarkDirty();
     }
 
     public void SetProgression(ProgressionComponent? progression)
     {
         _progression = progression;
-        _dirty = true;
+        MarkDirty();
     }
 
     public void SetSpellcasting(SpellcastingComponent? spellcasting)
     {
         _spellcasting = spellcasting;
-        _dirty = true;
+        MarkDirty();
     }
 
     public void SetPerks(PerksComponent? perks)
     {
         _perks = perks;
-        _dirty = true;
+        MarkDirty();
     }
 
     public void SetReputation(ReputationComponent? reputation)
     {
         _reputation = reputation;
-        _dirty = true;
+        MarkDirty();
     }
 
     public void SetCorruption(CorruptionComponent? corruption)
     {
         _corruption = corruption;
-        _dirty = true;
+        MarkDirty();
     }
 
-    public override void _Process(double delta)
+    private void OnChanged(InventoryChangedEvent e) => MarkDirty();
+
+    private void OnEquipmentChanged(EquipmentChangedEvent e) => MarkDirty();
+
+    private void OnXpGained(XpGainedEvent e) => MarkDirty();
+
+    private void OnLeveledUp(LeveledUpEvent e) => MarkDirty();
+
+    private void OnPerkChanged(PerkChangedEvent e) => MarkDirty();
+
+    private void OnSpellsChanged(SpellsChangedEvent e) => MarkDirty();
+
+    private void OnReputationChanged(ReputationChangedEvent e) => MarkDirty();
+
+    private void OnCorruptionChanged(CorruptionChangedEvent e) => MarkDirty();
+
+    protected override void Rebuild()
     {
-        if (Godot.Input.IsActionJustPressed(GameInput.Inventory))
-        {
-            Toggle();
-        }
-
-        if (_panel.Visible && _dirty)
-        {
-            Rebuild();
-        }
-    }
-
-    private void Toggle()
-    {
-        bool open = !_panel.Visible;
-        _panel.Visible = open;
-        if (open) UiState.Open(this); else UiState.Close(this);
-
-        bool playing = GameManager.Instance is { IsPlaying: true };
-        Godot.Input.MouseMode = UiState.MenuOpen || !playing
-            ? Godot.Input.MouseModeEnum.Visible
-            : Godot.Input.MouseModeEnum.Captured;
-
-        if (open)
-        {
-            _dirty = true;
-        }
-    }
-
-    private void OnChanged(InventoryChangedEvent e) => _dirty = true;
-
-    private void OnEquipmentChanged(EquipmentChangedEvent e) => _dirty = true;
-
-    private void OnXpGained(XpGainedEvent e) => _dirty = true;
-
-    private void OnLeveledUp(LeveledUpEvent e) => _dirty = true;
-
-    private void OnPerkChanged(PerkChangedEvent e) => _dirty = true;
-
-    private void OnSpellsChanged(SpellsChangedEvent e) => _dirty = true;
-
-    private void OnReputationChanged(ReputationChangedEvent e) => _dirty = true;
-
-    private void OnCorruptionChanged(CorruptionChangedEvent e) => _dirty = true;
-
-    private void BuildTabBar()
-    {
-        foreach ((CharTab tab, string key) in TabDefs)
-        {
-            Button button = UiTheme.Action(Loc.T(key));
-            CharTab captured = tab;
-            button.Pressed += () =>
-            {
-                _activeTab = captured;
-                _dirty = true;
-            };
-            _tabBar.AddChild(button);
-            _tabButtons[tab] = button;
-        }
-    }
-
-    private void Rebuild()
-    {
-        _dirty = false;
-
-        foreach (Node child in _list.GetChildren())
-        {
-            _list.RemoveChild(child);
-            child.QueueFree();
-        }
-
-        // Highlight the active tab.
-        foreach ((CharTab tab, Button button) in _tabButtons)
-        {
-            button.Modulate = tab == _activeTab ? UiTheme.Accent : UiTheme.Dim;
-        }
+        UiTheme.ClearChildren(_list);
 
         switch (_activeTab)
         {

@@ -209,6 +209,33 @@ public static class UiTheme
         return option;
     }
 
+    /// <summary>A vertical scroll area + content list, the shape every panel body uses
+    /// (30.5F). The scroll expands to fill its parent; the list grows with rows.</summary>
+    public static (ScrollContainer Scroll, VBoxContainer List) ScrollList()
+    {
+        var scroll = new ScrollContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+        };
+
+        var list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        list.AddThemeConstantOverride("separation", 3);
+        scroll.AddChild(list);
+        return (scroll, list);
+    }
+
+    /// <summary>Clears a rebuilt container's children (the dirty-flag rebuild pattern).</summary>
+    public static void ClearChildren(Node container)
+    {
+        foreach (Node child in container.GetChildren())
+        {
+            container.RemoveChild(child);
+            child.QueueFree();
+        }
+    }
+
     // --- Style boxes --------------------------------------------------------
 
     /// <summary>The framed-panel stylebox (also used by transient widgets like toasts).</summary>
