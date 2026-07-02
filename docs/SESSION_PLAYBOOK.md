@@ -2018,9 +2018,20 @@ no code) — batch them when momentum is good.
     gauge below it — previously XP was numbers-only while corruption had a bar).
     Feature-parity everywhere else. Build + 313 tests green; verified in a live maintainer
     session (post-load full-vitals confirmed at legendary-boosted max HP; no errors).
-- [ ] **30.5H — Crafting / dialogue / journal / map panels rebuilt** `[F/P]`
-  - **Done when:** the remaining panels are rebuilt on the framework; `DialoguePanel` keeps its
-    modal behaviour, the journal/map stay non-modal.
+- [x] **30.5H — Crafting / dialogue / journal / map panels rebuilt** `[F/P]` ✅
+  - **Done:** all four remaining panels ported onto the 30.5F `UiPanel` framework, deleting
+    their duplicated modal/mouse/dirty-flag plumbing. **CraftingPanel** — modal; the
+    craft/salvage switch moved from rebuilt-per-frame disabled-button rows into a static
+    `UiTabs` strip in the shell (resets to Craft on open), title now a static header updated
+    per station; keeps its E-to-close with the just-opened swallow via a `_Process` override
+    around the base. **DialoguePanel** — keeps its modal behaviour (per spec); event-driven
+    open/close and the `DialogueEndedEvent` publish unchanged. **QuestLogPanel (journal)** —
+    stays **non-modal** (`Modal => false`, per spec), J-toggle via the base's `ToggleAction`;
+    its literal colours tokenized (title `Accent`, done rows `Good`, pending `Text`).
+    **MapScreen** — modal (Phase 25G fast-travel buttons need the mouse; the spec's
+    "non-modal" predates 25G), M-toggle via the base; revision-diff refresh kept as a
+    `_Process` override that `MarkDirty()`s. Build + 313 tests green; booted in-engine to
+    the world with all panels constructed, no errors.
 - [ ] **30.5I — Motion & microinteractions** `[F/P]`
   - **Done when:** screen/panel transitions, hover/press feedback, and value-change animations
     (damage, XP, level-up) are in, behind a reduced-motion guard.

@@ -15,44 +15,41 @@ namespace Embervale.UI;
 /// choice buttons. Picking a choice applies its effect, advances the session and
 /// rebuilds; an ending choice (or "Leave" on a dead-end node) closes the window.
 ///
-/// While open it is modal — like the character screen it frees the mouse and sets
-/// <see cref="UiState.MenuOpen"/> so the player controller stops driving the character.
-/// Rebuilds happen from a dirty flag in <c>_Process</c> (never during a button signal)
-/// so a choice never frees its own button mid-callback.
+/// While open it is modal (on the 30.5F <see cref="UiPanel"/> framework) — like the
+/// character screen it frees the mouse and blocks the player controller so a choice
+/// never drives the character, and rebuilds ride the base's dirty-flag loop.
 /// </summary>
-public partial class DialoguePanel : CanvasLayer
+public partial class DialoguePanel : UiPanel
 {
-    private PanelContainer _panel = null!;
     private VBoxContainer _list = null!;
 
     private DialogueSession? _session;
     private IEntity? _player;
     private DialogueResource? _dialogue;
-    private bool _dirty;
 
-    public override void _Ready()
+    protected override void BuildShell(PanelContainer shell)
     {
-        _panel = UiTheme.Panel();
-        _panel.Visible = false;
-        _panel.AnchorLeft = 0.5f;
-        _panel.AnchorRight = 0.5f;
-        _panel.AnchorTop = 1f;
-        _panel.AnchorBottom = 1f;
-        _panel.OffsetLeft = -300;
-        _panel.OffsetRight = 300;
-        _panel.OffsetTop = -260;
-        _panel.OffsetBottom = -24;
-        _panel.GrowHorizontal = Control.GrowDirection.Both;
-        _panel.GrowVertical = Control.GrowDirection.Begin;
-        AddChild(_panel);
+        shell.AnchorLeft = 0.5f;
+        shell.AnchorRight = 0.5f;
+        shell.AnchorTop = 1f;
+        shell.AnchorBottom = 1f;
+        shell.OffsetLeft = -300;
+        shell.OffsetRight = 300;
+        shell.OffsetTop = -260;
+        shell.OffsetBottom = -24;
+        shell.GrowHorizontal = Control.GrowDirection.Both;
+        shell.GrowVertical = Control.GrowDirection.Begin;
 
         MarginContainer margin = UiTheme.Padding(14);
-        _panel.AddChild(margin);
+        shell.AddChild(margin);
 
         _list = new VBoxContainer();
-        _list.AddThemeConstantOverride("separation", 8);
+        _list.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(_list);
+    }
 
+    protected override void OnReady()
+    {
         EventBus.Instance?.Subscribe<DialogueStartedEvent>(OnDialogueStarted);
     }
 
@@ -81,15 +78,6 @@ public partial class DialoguePanel : CanvasLayer
         }
 
         SetOpen(true);
-        _dirty = true;
-    }
-
-    public override void _Process(double delta)
-    {
-        if (_panel.Visible && _dirty)
-        {
-            Rebuild();
-        }
     }
 
     private void Choose(DialogueChoice choice)
@@ -105,7 +93,7 @@ public partial class DialoguePanel : CanvasLayer
         }
         else
         {
-            _dirty = true;
+            MarkDirty();
         }
     }
 
@@ -125,26 +113,9 @@ public partial class DialoguePanel : CanvasLayer
         }
     }
 
-    private void SetOpen(bool open)
+    protected override void Rebuild()
     {
-        _panel.Visible = open;
-        if (open) UiState.Open(this); else UiState.Close(this);
-
-        bool playing = GameManager.Instance is { IsPlaying: true };
-        Godot.Input.MouseMode = UiState.MenuOpen || !playing
-            ? Godot.Input.MouseModeEnum.Visible
-            : Godot.Input.MouseModeEnum.Captured;
-    }
-
-    private void Rebuild()
-    {
-        _dirty = false;
-
-        foreach (Node child in _list.GetChildren())
-        {
-            _list.RemoveChild(child);
-            child.QueueFree();
-        }
+        UiTheme.ClearChildren(_list);
 
         if (_session?.CurrentNode is not { } node)
         {
