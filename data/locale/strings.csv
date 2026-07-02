@@ -126,6 +126,8 @@ char.empty,(empty)
 char.equip,Equip
 char.use,Use
 char.assign_hotbar,"Assign to hotbar slot {0}"
+interact.loot,Loot {0}
+interact.container,Container
 hud.hotbar_hint,"Press 1-5 to use · click to clear"
 hud.consumables,Consumables
 feedback.crit,CRITICAL!

@@ -94,7 +94,7 @@ public partial class PlayerController : EntityComponent
     }
 
     /// <summary>Switches between first-person gameplay (camera at the eye, own body casting
-    /// shadows only — the held weapon stays visible so swings read) and the retained
+    /// shadows only — the viewmodel arms carry the visible weapon) and the retained
     /// third-person view (camera orbits behind, full body shown). Gameplay ships first-person;
     /// the Phase 43 cutscene director calls <c>SetFirstPerson(false)</c> to frame the
     /// third-person rig and restores on cutscene end.</summary>
@@ -114,15 +114,11 @@ public partial class PlayerController : EntityComponent
         }
     }
 
-    /// <summary>Sets every mesh under <paramref name="node"/> to shadows-only (or restores it),
-    /// skipping the held-weapon subtree so the sword stays visible in first person.</summary>
+    /// <summary>Sets every mesh under <paramref name="node"/> to shadows-only (or restores it).
+    /// Includes the skeleton-held weapon — in first person the viewmodel arms
+    /// (<see cref="FirstPersonArmsComponent"/>) carry their own visible sword instead.</summary>
     private static void SetShadowOnly(Node node, bool shadowOnly)
     {
-        if (node.Name == "WeaponSocket")
-        {
-            return;
-        }
-
         if (node is GeometryInstance3D geometry)
         {
             geometry.CastShadow = shadowOnly

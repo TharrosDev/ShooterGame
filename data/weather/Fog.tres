@@ -12,6 +12,6 @@ MinHours = 3.0
 MaxHours = 5.0
 LightEnergyScale = 0.7
 SkyEnergyScale = 0.7
-FogDensity = 0.04
+FogDensity = 0.025
 FogColor = Color(0.72, 0.68, 0.62, 1)
 Precipitation = 0.0

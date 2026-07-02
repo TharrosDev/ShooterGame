@@ -211,6 +211,9 @@ public static class PlayerFactory
             Camera = camera,
         });
 
+        // First-person viewmodel arms (30L): ride the camera, swing with attacks, guard on block.
+        player.AddChild(new FirstPersonArmsComponent { Name = "FpArms", Camera = camera });
+
         // Race applies LAST so Stats/Perks/Spellcasting/Reputation have initialized when its
         // OnInitialize runs: the chosen race's stat deltas become modifiers and (on New Game) its
         // innate perks/spells/reputation are granted (Phase 26C).
