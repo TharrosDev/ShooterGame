@@ -35,15 +35,27 @@ public partial class GameHud : CanvasLayer
     private WeatherDirector? _weather;
     private WorldEventDirector? _worldEvents;
 
-    private ProgressBar _hpBar = null!;
-    private ProgressBar _staBar = null!;
-    private ProgressBar _mpBar = null!;
+    private JuicedBar _hpBar = null!;
+    private JuicedBar _staBar = null!;
+    private JuicedBar _mpBar = null!;
     private Label _hpText = null!;
     private Label _staText = null!;
     private Label _mpText = null!;
     private Label _footer = null!;
-    private Label _statusLine = null!;
     private ProgressBar _castBar = null!;
+
+    // Prepared spell + cooldown widget (30.5C): name tinted by school, a recovery bar that
+    // fills while the spell cools down, and a READY/charging/channeling state readout.
+    private HBoxContainer _spellRow = null!;
+    private Label _spellName = null!;
+    private Label _spellState = null!;
+    private ProgressBar _cooldownBar = null!;
+
+    // Status-effect chips (30.5C): one tinted chip per active effect. The row is rebuilt only
+    // when the effect set changes (signature compare); timers update in place per frame.
+    private HBoxContainer _statusRow = null!;
+    private readonly System.Collections.Generic.List<(StatusEffect Effect, Label Time)> _statusChips = new();
+    private string _statusSignature = string.Empty;
 
     private Label _context = null!;
 
@@ -55,7 +67,8 @@ public partial class GameHud : CanvasLayer
 
     private PanelContainer _namePanel = null!;
     private Label _nameText = null!;
-    private ProgressBar _nameBar = null!;
+    private JuicedBar _nameBar = null!;
+    private IEntity? _lastFocus;
 
     private PanelContainer _promptPanel = null!;
     private Label _promptText = null!;
@@ -74,7 +87,7 @@ public partial class GameHud : CanvasLayer
     // screen fade for the defeat beat. Driven by the boss encounter events; HP polled each frame.
     private PanelContainer _bossPanel = null!;
     private Label _bossName = null!;
-    private ProgressBar _bossBar = null!;
+    private JuicedBar _bossBar = null!;
     private Label _bossPhase = null!;
     private Label _bossMsg = null!;
     private ColorRect _bossFade = null!;
@@ -145,14 +158,32 @@ public partial class GameHud : CanvasLayer
         _footer = UiTheme.Body("", UiTheme.Dim);
         col.AddChild(_footer);
 
+        // Prepared spell: name in the school's colour, state readout, and a thin recovery bar
+        // that fills while the spell cools down (hidden when ready).
+        _spellRow = new HBoxContainer { Visible = false };
+        _spellRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        _spellName = UiTheme.Body("");
+        _spellName.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _spellRow.AddChild(_spellName);
+        _spellState = UiTheme.Caption("");
+        _spellState.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _spellRow.AddChild(_spellState);
+        col.AddChild(_spellRow);
+
+        _cooldownBar = UiTheme.Bar(UiTheme.Dim);
+        _cooldownBar.CustomMinimumSize = new Vector2(168f, 5f);
+        _cooldownBar.Visible = false;
+        col.AddChild(_cooldownBar);
+
         // Charge/channel meter (29.5G): fills while a charged cast is held, pinned full while
         // channeling, hidden otherwise. Modulated to the active spell's school colour.
         _castBar = UiTheme.Bar(new Color(0.9f, 0.9f, 0.9f));
         _castBar.Visible = false;
         col.AddChild(_castBar);
 
-        _statusLine = UiTheme.Body("", UiTheme.Good);
-        col.AddChild(_statusLine);
+        _statusRow = new HBoxContainer();
+        _statusRow.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        col.AddChild(_statusRow);
     }
 
     private void BuildContext()
@@ -214,7 +245,7 @@ public partial class GameHud : CanvasLayer
         _nameText = UiTheme.Body("");
         _nameText.HorizontalAlignment = HorizontalAlignment.Center;
         col.AddChild(_nameText);
-        _nameBar = UiTheme.Bar(UiTheme.Health, 170f);
+        _nameBar = JuicedBar.Create(UiTheme.Health, 170f);
         col.AddChild(_nameBar);
         WrapPadded(_namePanel, col);
     }
@@ -330,36 +361,118 @@ public partial class GameHud : CanvasLayer
         SetVital(_staBar, _staText, stats, StatType.Stamina);
         SetVital(_mpBar, _mpText, stats, StatType.Mana);
 
-        var footer = new StringBuilder();
-        if (_player.TryGetComponent(out ProgressionComponent prog))
-        {
-            footer.Append(Loc.TF("hud.level", prog.Level));
-        }
+        _footer.Text = _player.TryGetComponent(out ProgressionComponent prog)
+            ? Loc.TF("hud.level", prog.Level)
+            : string.Empty;
 
+        UpdateSpellWidget();
+        UpdateStatusChips();
+    }
+
+    /// <summary>The prepared-spell widget (30.5C): school-tinted name, state readout, and the
+    /// cooldown recovery bar (visible only while cooling down).</summary>
+    private void UpdateSpellWidget()
+    {
         bool casting = false;
-        if (_player.TryGetComponent(out SpellcastingComponent spells) && spells.Selected is { } spell)
+        if (_player!.TryGetComponent(out SpellcastingComponent spells) && spells.Selected is { } spell)
         {
+            Color tint = SpellSchools.Color(spell.School);
+            _spellName.Text = spell.DisplayName;
+            _spellName.Modulate = tint;
+
             float cd = spells.CooldownOf(spell);
-            string state = spells.IsCharging ? Loc.T("hud.charging")
+            _spellState.Text = spells.IsCharging ? Loc.T("hud.charging")
                 : spells.IsChanneling ? Loc.T("hud.channeling")
                 : cd > 0f ? $"{cd:0.0}s"
                 : Loc.T("hud.ready");
-            footer.Append(footer.Length > 0 ? "    " : string.Empty);
-            footer.Append(Loc.TF("hud.spell", spell.DisplayName, state));
+            _spellState.Modulate = cd > 0f ? UiTheme.Dim : UiTheme.Accent;
+            _spellRow.Visible = true;
+
+            bool coolingDown = cd > 0f && spell.Cooldown > 0f;
+            _cooldownBar.Visible = coolingDown;
+            if (coolingDown)
+            {
+                _cooldownBar.Value = 1d - (cd / spell.Cooldown);
+                _cooldownBar.Modulate = tint;
+            }
 
             casting = spells.IsCharging || spells.IsChanneling;
             if (casting)
             {
                 _castBar.Value = spells.IsCharging ? spells.ChargeProgress : 1d;
-                _castBar.Modulate = SpellSchools.Color(spell.School);
+                _castBar.Modulate = tint;
             }
+        }
+        else
+        {
+            _spellRow.Visible = false;
+            _cooldownBar.Visible = false;
         }
 
         _castBar.Visible = casting;
+    }
 
-        _footer.Text = footer.ToString();
-        _statusLine.Text = StatusText(_player);
-        _statusLine.Visible = _statusLine.Text.Length > 0;
+    /// <summary>The status-effect chip row (30.5C): rebuilt only when the active set changes;
+    /// per-chip countdowns update in place each frame.</summary>
+    private void UpdateStatusChips()
+    {
+        StatusEffectsComponent? effects = _player!.GetComponent<StatusEffectsComponent>();
+
+        var signature = new StringBuilder();
+        if (effects != null)
+        {
+            foreach (StatusEffect effect in effects.ActiveEffects)
+            {
+                signature.Append(effect.Definition.Id).Append('|');
+            }
+        }
+
+        string current = signature.ToString();
+        if (current != _statusSignature)
+        {
+            _statusSignature = current;
+            RebuildStatusChips(effects);
+        }
+
+        foreach ((StatusEffect effect, Label time) in _statusChips)
+        {
+            time.Text = $"{effect.Remaining:0.0}s";
+        }
+    }
+
+    private void RebuildStatusChips(StatusEffectsComponent? effects)
+    {
+        _statusChips.Clear();
+        foreach (Node child in _statusRow.GetChildren())
+        {
+            _statusRow.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        if (effects == null)
+        {
+            return;
+        }
+
+        foreach (StatusEffect effect in effects.ActiveEffects)
+        {
+            PanelContainer chip = Ignore(UiTheme.Panel());
+            var row = new HBoxContainer();
+            row.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+
+            // Buffs read as dead-green, afflictions in their school's colour.
+            Color tint = effect.Definition.IsBeneficial ? UiTheme.Good : SpellSchools.Color(effect.Definition.School);
+            row.AddChild(UiTheme.Caption(effect.Definition.DisplayName, tint));
+
+            Label time = UiTheme.Caption("");
+            row.AddChild(time);
+            _statusChips.Add((effect, time));
+
+            MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
+            pad.AddChild(row);
+            chip.AddChild(pad);
+            _statusRow.AddChild(chip);
+        }
     }
 
     private void UpdateContext()
@@ -448,11 +561,24 @@ public partial class GameHud : CanvasLayer
             focus.GetComponent<StatsComponent>() is { } stats)
         {
             _nameText.Text = focus.DisplayName;
-            _nameBar.Value = stats.GetNormalized(StatType.Health);
+
+            // Snap when the aimed-at subject changes so the drain lag never animates across targets.
+            double health = stats.GetNormalized(StatType.Health);
+            if (!ReferenceEquals(focus, _lastFocus))
+            {
+                _lastFocus = focus;
+                _nameBar.Snap(health);
+            }
+            else
+            {
+                _nameBar.SetTarget(health);
+            }
+
             _namePanel.Visible = true;
         }
         else
         {
+            _lastFocus = null;
             _namePanel.Visible = false;
         }
 
@@ -490,28 +616,7 @@ public partial class GameHud : CanvasLayer
 
     // --- Helpers ------------------------------------------------------------
 
-    private static string StatusText(IEntity player)
-    {
-        if (player.GetComponent<StatusEffectsComponent>() is not { } effects || effects.ActiveEffects.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        var sb = new StringBuilder();
-        foreach (StatusEffect effect in effects.ActiveEffects)
-        {
-            if (sb.Length > 0)
-            {
-                sb.Append("  ·  ");
-            }
-
-            sb.Append($"{effect.Definition.DisplayName} {effect.Remaining:0.0}s");
-        }
-
-        return sb.ToString();
-    }
-
-    private static (ProgressBar Bar, Label Value) AddVital(VBoxContainer col, string caption, Color fill)
+    private static (JuicedBar Bar, Label Value) AddVital(VBoxContainer col, string caption, Color fill)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
@@ -520,7 +625,7 @@ public partial class GameHud : CanvasLayer
         cap.CustomMinimumSize = new Vector2(34, 0);
         row.AddChild(cap);
 
-        ProgressBar bar = UiTheme.Bar(fill);
+        JuicedBar bar = JuicedBar.Create(fill);
         bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         row.AddChild(bar);
 
@@ -533,9 +638,9 @@ public partial class GameHud : CanvasLayer
         return (bar, value);
     }
 
-    private static void SetVital(ProgressBar bar, Label value, StatsComponent stats, StatType type)
+    private static void SetVital(JuicedBar bar, Label value, StatsComponent stats, StatType type)
     {
-        bar.Value = stats.GetNormalized(type);
+        bar.SetTarget(stats.GetNormalized(type));
         value.Text = $"{stats.GetCurrent(type):0}/{stats.GetMax(type):0}";
     }
 
@@ -560,7 +665,7 @@ public partial class GameHud : CanvasLayer
         _bossName.HorizontalAlignment = HorizontalAlignment.Center;
         col.AddChild(_bossName);
 
-        _bossBar = UiTheme.Bar(UiTheme.Health, 320f);
+        _bossBar = JuicedBar.Create(UiTheme.Health, 320f);
         col.AddChild(_bossBar);
 
         _bossPhase = UiTheme.Body("", UiTheme.Dim);
@@ -578,6 +683,7 @@ public partial class GameHud : CanvasLayer
     private void OnBossStarted(BossEncounterStartedEvent e)
     {
         _boss = e.Boss;
+        _bossBar.Snap(1d);
         _bossName.Text = Loc.T(e.NameKey);
         _bossPhase.Text = Loc.TF("boss.phase", 1, 3);
         _bossName.Visible = true;
@@ -619,7 +725,7 @@ public partial class GameHud : CanvasLayer
 
         if (_boss is Node node && IsInstanceValid(node) && _boss.TryGetComponent(out StatsComponent stats))
         {
-            _bossBar.Value = stats.GetNormalized(StatType.Health);
+            _bossBar.SetTarget(stats.GetNormalized(StatType.Health));
         }
 
         if (_bossMsg.Visible && now >= _bossMsgUntil)

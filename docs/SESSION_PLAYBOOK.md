@@ -1951,9 +1951,21 @@ no code) — batch them when momentum is good.
     boss/banner/nameplate stack), the F3 DebugHud readout dropped below the clock widget and
     its controls hint moved to bottom-right, the journal overlay dropped below the clock.
     Build + 313 tests green; verified across three live maintainer play sessions.
-- [ ] **30.5C — Core HUD widgets rebuilt** `[F/P]`
-  - **Done when:** vitals (health/stamina/mana), prepared spell + cooldown, status effects,
-    and the crosshair are rebuilt on the tokens with value-change juice.
+- [x] **30.5C — Core HUD widgets rebuilt** `[F/P]` ✅
+  - **Done:** `JuicedBar` (`src/UI/JuicedBar.cs`) — a themed resource bar with value-change
+    juice: rises instantly (heals feel responsive), drains with a ~0.9/s lag so hits read as
+    a chunk sliding off, and pulses the fill white-hot for 0.25 s on a drop; honours reduced
+    motion (snaps, no pulse) and exposes `Snap()` for subject changes. Drives the three
+    vitals, the nameplate (snaps when the aimed-at target changes so lag never animates
+    across subjects) and the boss bar (snaps full on encounter start). **Prepared-spell
+    widget:** school-tinted spell name + READY(accent)/charging/channeling/`N.Ns` state
+    caption + a thin school-tinted recovery bar that fills while the spell cools down —
+    replacing the old footer text blob (footer now shows level only). **Status-effect
+    chips:** the text line became per-effect chips (buff = dead-green, affliction = school
+    colour, live countdown); the row rebuilds only on set-signature change, timers update
+    in place. Crosshair joined the palette (bone-pale token). Build + 313 tests green;
+    verified during a live maintainer combat session (goblin fight: damage drain/pulse and
+    nameplate exercised, no errors).
 - [ ] **30.5D — Wayfinding HUD** `[F/P]`
   - **Done when:** compass, quest tracker, interaction prompt, nameplate, world-event banners,
     and toasts/notifications are unified on the new system.

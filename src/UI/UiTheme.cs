@@ -226,7 +226,8 @@ public static class UiTheme
         return box;
     }
 
-    private static StyleBoxFlat BarStyle(Color color)
+    /// <summary>The rounded bar stylebox (shared with <see cref="JuicedBar"/>).</summary>
+    internal static StyleBoxFlat BarStyle(Color color)
     {
         var box = new StyleBoxFlat { BgColor = color };
         box.SetCornerRadiusAll(RadiusSm);
