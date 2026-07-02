@@ -8,38 +8,38 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The quest journal: a read-only overlay toggled with the <c>journal</c> action (J).
-/// Unlike the character screen it is non-modal — it neither captures the mouse nor sets
-/// <see cref="UiState.MenuOpen"/>, so it can be left up while playing. It lists active
-/// quests with per-objective progress and a completed section, rebuilding from a dirty
-/// flag (never during a signal) whenever quest events fire or a game is loaded.
+/// The quest journal: a read-only overlay toggled with the <c>journal</c> action (J), built on
+/// the 30.5F <see cref="UiPanel"/> framework. Unlike the character screen it is non-modal — it
+/// neither captures the mouse nor sets <c>UiState.MenuOpen</c>, so it can be left up while
+/// playing. It lists active quests with per-objective progress and a completed section.
 /// </summary>
-public partial class QuestLogPanel : CanvasLayer
+public partial class QuestLogPanel : UiPanel
 {
     private QuestLogComponent? _log;
-    private PanelContainer _panel = null!;
     private VBoxContainer _list = null!;
-    private bool _dirty = true;
 
-    public override void _Ready()
+    protected override bool Modal => false;
+
+    protected override string? ToggleAction => GameInput.Journal;
+
+    protected override void BuildShell(PanelContainer shell)
     {
-        _panel = UiTheme.Panel();
-        _panel.Visible = false;
-        // Anchor to the top-left with a margin so it stays on-screen at any resolution (was an absolute
-        // position that drifted off-screen when the viewport stretched).
-        _panel.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
-        _panel.OffsetLeft = 16;
-        _panel.OffsetTop = 64; // below the GameHud's top-left clock/weather widget (30.5B)
-        _panel.CustomMinimumSize = new Vector2(360, 0);
-        AddChild(_panel);
+        // Top-left, below the HUD's clock/weather widget (30.5B placement sweep).
+        shell.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
+        shell.OffsetLeft = 16;
+        shell.OffsetTop = 64;
+        shell.CustomMinimumSize = new Vector2(360, 0);
 
         MarginContainer margin = UiTheme.Padding(12);
-        _panel.AddChild(margin);
+        shell.AddChild(margin);
 
         _list = new VBoxContainer();
         _list.AddThemeConstantOverride("separation", 3);
         margin.AddChild(_list);
+    }
 
+    protected override void OnReady()
+    {
         EventBus.Instance?.Subscribe<QuestStartedEvent>(OnQuestStarted);
         EventBus.Instance?.Subscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
         EventBus.Instance?.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
@@ -57,43 +57,20 @@ public partial class QuestLogPanel : CanvasLayer
     public void SetQuestLog(QuestLogComponent? log)
     {
         _log = log;
-        _dirty = true;
+        MarkDirty();
     }
 
-    public override void _Process(double delta)
+    private void OnQuestStarted(QuestStartedEvent e) => MarkDirty();
+
+    private void OnObjectiveAdvanced(QuestObjectiveAdvancedEvent e) => MarkDirty();
+
+    private void OnQuestCompleted(QuestCompletedEvent e) => MarkDirty();
+
+    private void OnGameLoaded(GameLoadedEvent e) => MarkDirty();
+
+    protected override void Rebuild()
     {
-        if (Godot.Input.IsActionJustPressed(GameInput.Journal))
-        {
-            _panel.Visible = !_panel.Visible;
-            if (_panel.Visible)
-            {
-                _dirty = true;
-            }
-        }
-
-        if (_panel.Visible && _dirty)
-        {
-            Rebuild();
-        }
-    }
-
-    private void OnQuestStarted(QuestStartedEvent e) => _dirty = true;
-
-    private void OnObjectiveAdvanced(QuestObjectiveAdvancedEvent e) => _dirty = true;
-
-    private void OnQuestCompleted(QuestCompletedEvent e) => _dirty = true;
-
-    private void OnGameLoaded(GameLoadedEvent e) => _dirty = true;
-
-    private void Rebuild()
-    {
-        _dirty = false;
-
-        foreach (Node child in _list.GetChildren())
-        {
-            _list.RemoveChild(child);
-            child.QueueFree();
-        }
+        UiTheme.ClearChildren(_list);
 
         AddHeader(Loc.T("questlog.title"));
 
@@ -132,13 +109,13 @@ public partial class QuestLogPanel : CanvasLayer
                 completedHeader = true;
             }
 
-            AddLine($"✓ {Loc.T(progress.Quest.Title)}", new Color(0.55f, 0.75f, 0.55f));
+            AddLine($"✓ {Loc.T(progress.Quest.Title)}", UiTheme.Good);
         }
     }
 
     private void BuildQuest(QuestProgress progress)
     {
-        AddLine(Loc.T(progress.Quest.Title), new Color(0.95f, 0.85f, 0.45f));
+        AddLine(Loc.T(progress.Quest.Title), UiTheme.Accent);
 
         List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
@@ -147,7 +124,7 @@ public partial class QuestLogPanel : CanvasLayer
             bool done = progress.IsObjectiveComplete(i);
             string mark = done ? "✓" : "•";
             AddLine($"   {mark} {Loc.T(objective.ShortLabel())}  {progress.Counts[i]}/{objective.RequiredCount}",
-                done ? new Color(0.55f, 0.75f, 0.55f) : Colors.White);
+                done ? UiTheme.Good : UiTheme.Text);
         }
     }
 

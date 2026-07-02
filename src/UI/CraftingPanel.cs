@@ -9,18 +9,18 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The crafting window. It is event-driven: a <see cref="CraftingStationComponent"/>
-/// publishes a <see cref="CraftingStationOpenedEvent"/> on interact, this panel resolves
-/// the player's <see cref="CraftingComponent"/> + <see cref="InventoryComponent"/> and
-/// lists the recipes that match the station (plus <c>Hand</c> recipes the player knows),
-/// each with a have/need ingredient breakdown and a Craft button enabled only when it can
-/// be made. Like the character screen it is modal — it frees the mouse and sets
-/// <see cref="UiState.MenuOpen"/>. Rebuilt from a dirty flag in <c>_Process</c> (never
-/// during a button signal) so crafting never frees its own button mid-callback.
+/// The crafting window (on the 30.5F <see cref="UiPanel"/> framework). It is event-driven: a
+/// <see cref="CraftingStationComponent"/> publishes a <see cref="CraftingStationOpenedEvent"/>
+/// on interact, this panel resolves the player's <see cref="CraftingComponent"/> +
+/// <see cref="InventoryComponent"/> and lists the recipes that match the station (plus
+/// <c>Hand</c> recipes the player knows), each with a have/need ingredient breakdown and a
+/// Craft button enabled only when it can be made. The craft/salvage switch rides the shared
+/// <see cref="UiTabs"/> strip; the base owns the modal contract and the dirty-flag rebuild.
 /// </summary>
-public partial class CraftingPanel : CanvasLayer
+public partial class CraftingPanel : UiPanel
 {
-    private PanelContainer _panel = null!;
+    private Label _title = null!;
+    private UiTabs _modeTabs = null!;
     private VBoxContainer _list = null!;
 
     private IEntity? _player;
@@ -28,36 +28,54 @@ public partial class CraftingPanel : CanvasLayer
     private InventoryComponent? _inventory;
     private CraftingStationType _station;
     private string _stationName = "Crafting";
-    private bool _dirty;
     private bool _justOpened;
     private bool _salvageMode;
 
-    public override void _Ready()
+    protected override void BuildShell(PanelContainer shell)
     {
-        _panel = UiTheme.Panel();
-        _panel.Visible = false;
-        _panel.AnchorLeft = 0.5f;
-        _panel.AnchorRight = 0.5f;
-        _panel.OffsetLeft = -230;
-        _panel.OffsetRight = 230;
-        _panel.OffsetTop = 60;
-        _panel.GrowHorizontal = Control.GrowDirection.Both;
-        AddChild(_panel);
+        shell.AnchorLeft = 0.5f;
+        shell.AnchorRight = 0.5f;
+        shell.OffsetLeft = -230;
+        shell.OffsetRight = 230;
+        shell.OffsetTop = 60;
+        shell.GrowHorizontal = Control.GrowDirection.Both;
 
         MarginContainer margin = UiTheme.Padding(12);
-        _panel.AddChild(margin);
+        shell.AddChild(margin);
+
+        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        margin.AddChild(column);
+
+        _title = UiTheme.Header(string.Empty);
+        column.AddChild(_title);
+
+        // Craft / Salvage switch — static layout; the pages rebuild inside the list below.
+        _modeTabs = new UiTabs();
+        _modeTabs.Add(Loc.T("craft.mode_craft"));
+        _modeTabs.Add(Loc.T("craft.mode_salvage"));
+        _modeTabs.TabChanged += index =>
+        {
+            _salvageMode = index == 1;
+            MarkDirty();
+        };
+        column.AddChild(_modeTabs);
+        column.AddChild(new HSeparator());
 
         var scroll = new ScrollContainer
         {
-            CustomMinimumSize = new Vector2(436, 540),
+            CustomMinimumSize = new Vector2(436, 500),
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
         };
-        margin.AddChild(scroll);
+        column.AddChild(scroll);
 
         _list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        _list.AddThemeConstantOverride("separation", 4);
+        _list.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         scroll.AddChild(_list);
+    }
 
+    protected override void OnReady()
+    {
         EventBus.Instance?.Subscribe<CraftingStationOpenedEvent>(OnStationOpened);
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Subscribe<ItemCraftedEvent>(OnItemCrafted);
@@ -75,7 +93,7 @@ public partial class CraftingPanel : CanvasLayer
     private void OnStationOpened(CraftingStationOpenedEvent e)
     {
         // Ignore a second station while one is open.
-        if (_panel.Visible)
+        if (IsOpen)
         {
             return;
         }
@@ -92,61 +110,50 @@ public partial class CraftingPanel : CanvasLayer
         }
 
         _salvageMode = false;
+        _modeTabs.Select(0);
         SetOpen(true);
-        _dirty = true;
 
         // The same interact press that opened the station is still "just pressed" this
         // frame; swallow it so the close-on-interact below doesn't fire immediately.
         _justOpened = true;
     }
 
-    private void OnInventoryChanged(InventoryChangedEvent e) => _dirty = true;
+    private void OnInventoryChanged(InventoryChangedEvent e) => MarkDirty();
 
-    private void OnItemCrafted(ItemCraftedEvent e) => _dirty = true;
+    private void OnItemCrafted(ItemCraftedEvent e) => MarkDirty();
 
-    private void OnItemDeconstructed(ItemDeconstructedEvent e) => _dirty = true;
+    private void OnItemDeconstructed(ItemDeconstructedEvent e) => MarkDirty();
 
     public override void _Process(double delta)
     {
-        if (!_panel.Visible)
+        if (IsOpen)
         {
-            return;
+            // Swallow the interact press that opened the station this frame.
+            if (_justOpened)
+            {
+                _justOpened = false;
+            }
+            else if (Godot.Input.IsActionJustPressed(GameInput.Interact))
+            {
+                // A modal needs an easy out; the interact key both opens and closes it.
+                Close();
+                return;
+            }
         }
 
-        // Swallow the interact press that opened the station this frame.
-        if (_justOpened)
-        {
-            _justOpened = false;
-        }
-        else if (Godot.Input.IsActionJustPressed(GameInput.Interact))
-        {
-            // A modal needs an easy out; the interact key both opens and closes it.
-            Close();
-            return;
-        }
-
-        if (_dirty)
-        {
-            Rebuild();
-        }
+        base._Process(delta);
     }
 
     private void Craft(CraftingRecipeResource recipe)
     {
         _crafting?.Craft(recipe, _station);
-        _dirty = true; // rebuild next frame (events also flag it)
+        MarkDirty(); // rebuild next frame (events also flag it)
     }
 
     private void Deconstruct(ItemInstance instance)
     {
         _crafting?.Deconstruct(instance, _station);
-        _dirty = true; // rebuild next frame (events also flag it)
-    }
-
-    private void SetMode(bool salvage)
-    {
-        _salvageMode = salvage;
-        _dirty = true;
+        MarkDirty(); // rebuild next frame (events also flag it)
     }
 
     private void Close()
@@ -163,35 +170,16 @@ public partial class CraftingPanel : CanvasLayer
         }
     }
 
-    private void SetOpen(bool open)
+    protected override void Rebuild()
     {
-        _panel.Visible = open;
-        if (open) UiState.Open(this); else UiState.Close(this);
+        UiTheme.ClearChildren(_list);
 
-        bool playing = GameManager.Instance is { IsPlaying: true };
-        Godot.Input.MouseMode = UiState.MenuOpen || !playing
-            ? Godot.Input.MouseModeEnum.Visible
-            : Godot.Input.MouseModeEnum.Captured;
-    }
-
-    private void Rebuild()
-    {
-        _dirty = false;
-
-        foreach (Node child in _list.GetChildren())
-        {
-            _list.RemoveChild(child);
-            child.QueueFree();
-        }
-
-        _list.AddChild(UiTheme.Header($"{_stationName}   (E to close)"));
+        _title.Text = $"{_stationName}   (E to close)";
 
         if (_crafting == null)
         {
             return;
         }
-
-        AddModeTabs();
 
         if (_salvageMode)
         {
@@ -201,26 +189,6 @@ public partial class CraftingPanel : CanvasLayer
         {
             RebuildCraft();
         }
-    }
-
-    /// <summary>Craft / Salvage switch at the top of the panel; the active mode reads as the accent.</summary>
-    private void AddModeTabs()
-    {
-        var tabs = new HBoxContainer();
-        tabs.AddThemeConstantOverride("separation", 8);
-
-        Button craftTab = UiTheme.Action(Loc.T("craft.mode_craft"));
-        craftTab.Disabled = !_salvageMode; // the active tab is the disabled (highlighted) one
-        craftTab.Pressed += () => SetMode(false);
-        tabs.AddChild(craftTab);
-
-        Button salvageTab = UiTheme.Action(Loc.T("craft.mode_salvage"));
-        salvageTab.Disabled = _salvageMode;
-        salvageTab.Pressed += () => SetMode(true);
-        tabs.AddChild(salvageTab);
-
-        _list.AddChild(tabs);
-        _list.AddChild(new HSeparator());
     }
 
     private void RebuildCraft()
