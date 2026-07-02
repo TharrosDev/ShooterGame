@@ -23,7 +23,9 @@ public partial class Crosshair : Control
 
     [Export] public float Thickness { get; set; } = 2f;
 
-    private static readonly Color LineColor = new(0.96f, 0.97f, 1.00f, 0.9f);
+    // Bone-pale (the token text colour) so the reticle sits in the dying-world palette; the
+    // dark offset outline keeps it readable on bright scenes.
+    private static readonly Color LineColor = new(UiTheme.Text, 0.95f);
     private static readonly Color Outline = new(0f, 0f, 0f, 0.5f);
 
     public override void _Ready()
