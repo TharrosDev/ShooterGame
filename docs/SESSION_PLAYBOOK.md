@@ -1789,10 +1789,15 @@ no code) — batch them when momentum is good.
     and keep a death timer before `QueueFree` that gives the death clip room to play. Build +
     313 tests + `--import` green; verified in-engine live — the maintainer fought animated
     goblins and quick-saved repeatedly, no new errors (WASAPI audio-device noise pre-exists).
-- [ ] **30G — Third-person body for cutscenes/reflections** `[P]`
+- [x] **30G — Third-person body for cutscenes/reflections** `[P]` ✅
   - **Done when:** a TP body exists for the Phase 43 cutscenes and corruption
     appearance (23F) hangs off it.
-- [ ] **30H — World/environment model set for the Ember Crown slice** `[P]`
+  - **Done:** satisfied by 30B/30C with no additional work — the rigged
+    `chr_player_base.glb` **is** the third-person body (always visible under the TP camera,
+    full clip set for Phase 43 to sequence), and `CorruptionAppearanceController` already
+    hangs off it per-surface (30B): skin-only ember veins + whole-body ashing per tier.
+    Recorded here so the checkbox reflects reality rather than re-doing the work.
+- [x] **30H — World/environment model set for the Ember Crown slice** `[P]` ✅
   - **Goal:** the Phase 27 Ember Crown slice has real dressing, not greybox.
   - **Tasks:** built in Blender via the Blender MCP — town-hub building kit (inn,
     guild presence, vendor stalls, crafting stations, a housing-plot exterior) +
@@ -1800,6 +1805,20 @@ no code) — batch them when momentum is good.
     export to glTF.
   - **Done when:** the Ember Crown walkable slice can be dressed with real meshes
     instead of placeholder primitives.
+  - **Done:** a 10-piece environment kit built via the Blender MCP (60–360 tris each, palette
+    materials): `assets/models/architecture/bld_house_a.glb` (timber-framed gabled house fitted
+    to the 6×5×8 greybox footprint — door, windows, beams) and `bld_house_b.glb` (the inn:
+    stone base, chimney, ember sign, fitted to 8×6×6), plus `props/` — waystone monolith with an
+    ember rune band, forge (stone hearth + ember bed + anvil), workbench, alchemy table
+    (glowing retort), guild banner, rock cluster, ruin pillar, dead pine. **The town hub is
+    dressed**: `town_hub.tscn`'s greybox `BoxMesh` visuals were stripped (all `StaticBody3D`
+    colliders, entities, dialogue/schedule/station components untouched) and the kit instanced
+    in their places — and the five capsule NPCs (elder, three vendors, innkeeper) now wear the
+    **30D character models** (guild-rep robe for the elder, vendor/innkeeper bodies). The wilds
+    get an augmentation pass: `wilds_north.tscn` gains scattered pines, rock clusters, and two
+    ruin pillars (one tilted) over its existing greybox. `--import` + `--validate` (cell scene
+    paths re-resolve) + in-engine streaming run green — the maintainer walked the dressed town
+    and wilds live, both cells stream in/out with no errors.
 - [ ] **30I — Status/impact VFX library + corruption materials** `[P]`
   - **Done when:** status effects + corruption tiers (replacing 23F placeholders)
     use real materials/VFX.

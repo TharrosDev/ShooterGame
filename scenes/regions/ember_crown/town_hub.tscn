@@ -9,6 +9,16 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="7_dialogue"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="8_schedule"]
 [ext_resource type="Script" path="res://src/Crafting/CraftingStationComponent.cs" id="9_station"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="10_house_a"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="11_house_b"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="12_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_forge.glb" id="13_forge"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_workbench.glb" id="14_workbench"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_alchemy.glb" id="15_alchemy"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="16_banner"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="17_npc_elder"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="18_npc_vendor"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="19_npc_inn"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -146,8 +156,6 @@ shape = SubResource("Shape_floor")
 
 [node name="BuildingNW" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2.5, -6)
-mesh = SubResource("BoxMesh_bldgA")
-surface_material_override/0 = SubResource("Mat_bldg")
 
 [node name="BuildingNWCol" type="StaticBody3D" parent="Nav/BuildingNW"]
 
@@ -156,8 +164,6 @@ shape = SubResource("Shape_bldgA")
 
 [node name="BuildingNE" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.5, -6)
-mesh = SubResource("BoxMesh_bldgA")
-surface_material_override/0 = SubResource("Mat_bldg")
 
 [node name="BuildingNECol" type="StaticBody3D" parent="Nav/BuildingNE"]
 
@@ -166,8 +172,6 @@ shape = SubResource("Shape_bldgA")
 
 [node name="BuildingSW" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3, -22)
-mesh = SubResource("BoxMesh_bldgB")
-surface_material_override/0 = SubResource("Mat_bldg")
 
 [node name="BuildingSWCol" type="StaticBody3D" parent="Nav/BuildingSW"]
 
@@ -176,8 +180,6 @@ shape = SubResource("Shape_bldgB")
 
 [node name="BuildingSE" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, -22)
-mesh = SubResource("BoxMesh_bldgB")
-surface_material_override/0 = SubResource("Mat_bldg")
 
 [node name="BuildingSECol" type="StaticBody3D" parent="Nav/BuildingSE"]
 
@@ -191,8 +193,6 @@ DisplayName = "Ember Crown Waystone"
 
 [node name="Pillar" type="MeshInstance3D" parent="Waystone"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-mesh = SubResource("Mesh_waystone")
-surface_material_override/0 = SubResource("Mat_waystone")
 
 [node name="Collider" type="StaticBody3D" parent="Waystone"]
 
@@ -236,8 +236,6 @@ TemplateId = "npc.elder"
 
 [node name="Mesh" type="MeshInstance3D" parent="Elder"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("Mesh_npc")
-material_override = SubResource("Mat_elder")
 
 [node name="Collider" type="StaticBody3D" parent="Elder"]
 
@@ -265,8 +263,6 @@ TemplateId = "npc.vendor_goods"
 
 [node name="Mesh" type="MeshInstance3D" parent="VendorGoods"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("Mesh_npc")
-material_override = SubResource("Mat_vendor_goods")
 
 [node name="Collider" type="StaticBody3D" parent="VendorGoods"]
 
@@ -295,8 +291,6 @@ TemplateId = "npc.vendor_smith"
 
 [node name="Mesh" type="MeshInstance3D" parent="VendorSmith"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("Mesh_npc")
-material_override = SubResource("Mat_vendor_smith")
 
 [node name="Collider" type="StaticBody3D" parent="VendorSmith"]
 
@@ -324,8 +318,6 @@ TemplateId = "npc.vendor_alch"
 
 [node name="Mesh" type="MeshInstance3D" parent="VendorAlch"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("Mesh_npc")
-material_override = SubResource("Mat_vendor_alch")
 
 [node name="Collider" type="StaticBody3D" parent="VendorAlch"]
 
@@ -353,8 +345,6 @@ TemplateId = "npc.innkeeper"
 
 [node name="Mesh" type="MeshInstance3D" parent="Innkeeper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("Mesh_npc")
-material_override = SubResource("Mat_innkeeper")
 
 [node name="Collider" type="StaticBody3D" parent="Innkeeper"]
 
@@ -382,8 +372,6 @@ DisplayName = "Adventurers' Guild Notice"
 
 [node name="Mesh" type="MeshInstance3D" parent="GuildMarker"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-mesh = SubResource("Mesh_banner")
-material_override = SubResource("Mat_banner")
 
 [node name="Collider" type="StaticBody3D" parent="GuildMarker"]
 
@@ -403,8 +391,6 @@ TemplateId = "station.forge"
 
 [node name="Mesh" type="MeshInstance3D" parent="StationForge"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-mesh = SubResource("Mesh_station")
-material_override = SubResource("Mat_forge")
 
 [node name="Collider" type="StaticBody3D" parent="StationForge"]
 
@@ -425,8 +411,6 @@ TemplateId = "station.workbench"
 
 [node name="Mesh" type="MeshInstance3D" parent="StationWorkbench"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-mesh = SubResource("Mesh_station")
-material_override = SubResource("Mat_workbench")
 
 [node name="Collider" type="StaticBody3D" parent="StationWorkbench"]
 
@@ -447,8 +431,6 @@ TemplateId = "station.alchemy"
 
 [node name="Mesh" type="MeshInstance3D" parent="StationAlchemy"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-mesh = SubResource("Mesh_station")
-material_override = SubResource("Mat_alchemy")
 
 [node name="Collider" type="StaticBody3D" parent="StationAlchemy"]
 
@@ -460,3 +442,35 @@ shape = SubResource("Shape_station")
 script = ExtResource("9_station")
 Station = 3
 StationName = "Alchemy Table"
+
+[node name="Model" parent="Nav/BuildingNW" instance=ExtResource("10_house_a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
+
+[node name="Model" parent="Nav/BuildingNE" instance=ExtResource("10_house_a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
+
+[node name="Model" parent="Nav/BuildingSW" instance=ExtResource("11_house_b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
+
+[node name="Model" parent="Nav/BuildingSE" instance=ExtResource("11_house_b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
+
+[node name="Model" parent="Waystone" instance=ExtResource("12_waystone")]
+
+[node name="Model" parent="Elder" instance=ExtResource("17_npc_elder")]
+
+[node name="Model" parent="VendorGoods" instance=ExtResource("18_npc_vendor")]
+
+[node name="Model" parent="VendorSmith" instance=ExtResource("18_npc_vendor")]
+
+[node name="Model" parent="VendorAlch" instance=ExtResource("18_npc_vendor")]
+
+[node name="Model" parent="Innkeeper" instance=ExtResource("19_npc_inn")]
+
+[node name="Model" parent="GuildMarker" instance=ExtResource("16_banner")]
+
+[node name="Model" parent="StationForge" instance=ExtResource("13_forge")]
+
+[node name="Model" parent="StationWorkbench" instance=ExtResource("14_workbench")]
+
+[node name="Model" parent="StationAlchemy" instance=ExtResource("15_alchemy")]

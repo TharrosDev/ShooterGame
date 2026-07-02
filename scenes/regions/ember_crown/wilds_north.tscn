@@ -7,6 +7,9 @@
 [ext_resource type="Resource" path="res://data/items/RubyGem.tres" id="5_gem"]
 [ext_resource type="Resource" path="res://data/items/HealthPotion.tres" id="6_potion"]
 [ext_resource type="Resource" path="res://data/items/IronOre.tres" id="7_ore"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="8_pine"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="9_rocks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="10_pillar"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_wn"]
 geometry_parsed_geometry_type = 1
@@ -244,3 +247,27 @@ shape = SubResource("Shape_pickup")
 script = ExtResource("3_pickup")
 Item = ExtResource("7_ore")
 Quantity = 3
+
+[node name="Pine1" parent="." instance=ExtResource("8_pine")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, -10)
+
+[node name="Pine2" parent="." instance=ExtResource("8_pine")]
+transform = Transform3D(0.8, 0, 0.6, 0, 1, 0, -0.6, 0, 0.8, 16, 0, -14)
+
+[node name="Pine3" parent="." instance=ExtResource("8_pine")]
+transform = Transform3D(-0.7, 0, 0.71, 0, 1, 0, -0.71, 0, -0.7, -18, 0, 12)
+
+[node name="Pine4" parent="." instance=ExtResource("8_pine")]
+transform = Transform3D(1, 0, 0, 0, 1.15, 0, 0, 0, 1, 10, 0, 16)
+
+[node name="Rocks1" parent="." instance=ExtResource("9_rocks")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 8, 0, -6)
+
+[node name="Rocks2" parent="." instance=ExtResource("9_rocks")]
+transform = Transform3D(-0.9, 0, 0.44, 0, 1, 0, -0.44, 0, -0.9, -10, 0, 8)
+
+[node name="RuinPillar1" parent="." instance=ExtResource("10_pillar")]
+transform = Transform3D(0.94, 0, 0.34, 0, 1, 0, -0.34, 0, 0.94, -6, 0, -16)
+
+[node name="RuinPillar2" parent="." instance=ExtResource("10_pillar")]
+transform = Transform3D(0.5, -0.1, 0.86, 0.1, 0.99, 0, -0.86, 0.05, 0.5, 5, 0, -18)
