@@ -44,7 +44,7 @@ public sealed partial class CompassStrip : Control
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
-        CustomMinimumSize = new Vector2(360f, StripHeight);
+        CustomMinimumSize = new Vector2(320f, StripHeight);
         Size = CustomMinimumSize;
     }
 

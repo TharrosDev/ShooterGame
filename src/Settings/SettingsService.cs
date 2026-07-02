@@ -84,6 +84,13 @@ public sealed class SettingsService
             : DisplayServer.VSyncMode.Disabled);
 
         Engine.MaxFps = Current.MaxFps < 0 ? 0 : Current.MaxFps;
+
+        // Global UI scale (30.5B): with the project's canvas_items stretch, the window's content
+        // scale factor resizes every 2D surface (HUD, panels, menus) without touching 3D rendering.
+        if (Engine.GetMainLoop() is SceneTree tree)
+        {
+            tree.Root.ContentScaleFactor = Mathf.Clamp(Current.UiScale, 0.75f, 1.5f);
+        }
     }
 
     private void ApplyAudio()
