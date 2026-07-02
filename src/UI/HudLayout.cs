@@ -5,22 +5,27 @@ namespace Embervale.UI;
 /// <summary>
 /// The HUD layout system (Phase 30.5B): a full-screen, mouse-transparent root with anchored
 /// **widget slots** every HUD element parents into, replacing per-widget anchor/offset math.
-/// A single safe-area margin insets all slots from the screen edges (one knob instead of
-/// scattered magic 16s), and stacked slots (e.g. <see cref="TopCenter"/>) space their widgets
-/// automatically — hidden widgets collapse, so the boss bar, event banner and nameplate never
-/// overlap the way hand-tuned y-offsets did. Global UI scale is handled upstream by the
-/// window's content scale factor (see <c>SettingsService.ApplyGraphics</c>), so slots need no
-/// per-widget scaling.
+/// Each slot is a stack pinned to a corner/edge, inset by one safe-area margin (one knob
+/// instead of scattered magic 16s); stacked slots space their widgets automatically — hidden
+/// widgets collapse, so the boss bar, event banner and nameplate never overlap the way
+/// hand-tuned y-offsets did. Global UI scale is handled upstream by the window's content
+/// scale factor (see <c>SettingsService.ApplyGraphics</c>), so slots need no per-widget
+/// scaling.
 ///
-/// Slots are plain containers: widgets keep owning their look and update logic; the layout
-/// only owns *where they live*. OS safe-area insets (TV overscan, notches) are zero on the
-/// desktop/Steam Deck targets, so the margin is the token inset; raise <see cref="SafeMargin"/>
-/// if a platform ever needs more.
+/// Slots are anchored directly on this root (zero-size rects at their pivot that grow toward
+/// screen centre as content demands — the same mechanics the pre-30.5B widgets used, minus
+/// the duplication). OS safe-area insets (TV overscan, notches) are zero on the desktop/
+/// Steam Deck targets, so the margin is the token inset; raise <see cref="SafeMargin"/> if a
+/// platform ever needs more.
 /// </summary>
 public partial class HudLayout : Control
 {
     /// <summary>Inset between the screen edge and every slot.</summary>
     public int SafeMargin { get; set; } = UiTheme.SpaceLg;
+
+    /// <summary>How far above the bottom edge the bottom-centre slot floats (prompt near the
+    /// player's natural gaze).</summary>
+    public int BottomCenterLift { get; set; } = 96;
 
     /// <summary>Top-left stack (context: time, weather).</summary>
     public VBoxContainer TopLeft { get; private set; } = null!;
@@ -50,39 +55,35 @@ public partial class HudLayout : Control
         Overlay.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(Overlay);
 
-        var safe = new MarginContainer { Name = "SafeArea", MouseFilter = MouseFilterEnum.Ignore };
-        safe.SetAnchorsPreset(LayoutPreset.FullRect);
-        safe.AddThemeConstantOverride("margin_left", SafeMargin);
-        safe.AddThemeConstantOverride("margin_right", SafeMargin);
-        safe.AddThemeConstantOverride("margin_top", SafeMargin);
-        safe.AddThemeConstantOverride("margin_bottom", SafeMargin);
-        AddChild(safe);
-
-        TopLeft = Slot("TopLeft", safe, horizontal: 0f, vertical: 0f);
-        TopCenter = Slot("TopCenter", safe, horizontal: 0.5f, vertical: 0f);
-        TopRight = Slot("TopRight", safe, horizontal: 1f, vertical: 0f);
-        BottomLeft = Slot("BottomLeft", safe, horizontal: 0f, vertical: 1f);
-        BottomCenter = Slot("BottomCenter", safe, horizontal: 0.5f, vertical: 1f);
-
-        // The prompt slot floats above the very bottom edge, near the player's natural gaze.
-        BottomCenter.OffsetBottom = -96;
+        TopLeft = Slot("TopLeft", horizontal: 0f, vertical: 0f);
+        TopCenter = Slot("TopCenter", horizontal: 0.5f, vertical: 0f);
+        TopRight = Slot("TopRight", horizontal: 1f, vertical: 0f);
+        BottomLeft = Slot("BottomLeft", horizontal: 0f, vertical: 1f);
+        BottomCenter = Slot("BottomCenter", horizontal: 0.5f, vertical: 1f, extraLift: BottomCenterLift);
     }
 
-    /// <summary>A stacked slot pinned to a corner/edge of the safe area. <paramref name="horizontal"/>
-    /// and <paramref name="vertical"/> are 0/0.5/1 anchor fractions (left/centre/right, top/bottom).</summary>
-    private static VBoxContainer Slot(string name, MarginContainer safe, float horizontal, float vertical)
+    /// <summary>A stacked slot pinned to a corner/edge. <paramref name="horizontal"/> and
+    /// <paramref name="vertical"/> are 0/0.5/1 anchor fractions (left/centre/right, top/bottom).
+    /// The slot starts as a zero-size rect at its safe-area-inset pivot and grows toward the
+    /// screen centre as its content's minimum size demands.</summary>
+    private VBoxContainer Slot(string name, float horizontal, float vertical, int extraLift = 0)
     {
-        // MarginContainer children fill it; an inner wrapper keeps each slot shrink-wrapped to its
-        // content and aligned to its corner instead of stretching across the screen.
-        var align = new Control { Name = name + "Anchor", MouseFilter = MouseFilterEnum.Ignore };
-        safe.AddChild(align);
-
         var slot = new VBoxContainer { Name = name, MouseFilter = MouseFilterEnum.Ignore };
         slot.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
         slot.AnchorLeft = horizontal;
         slot.AnchorRight = horizontal;
         slot.AnchorTop = vertical;
         slot.AnchorBottom = vertical;
+
+        // Pivot the zero-size rect one margin in from the edge it hugs (centres stay on axis).
+        float x = horizontal switch { 0f => SafeMargin, 1f => -SafeMargin, _ => 0f };
+        float y = vertical == 1f ? -(SafeMargin + extraLift) : SafeMargin + extraLift;
+        slot.OffsetLeft = x;
+        slot.OffsetRight = x;
+        slot.OffsetTop = y;
+        slot.OffsetBottom = y;
+
         slot.GrowHorizontal = horizontal switch
         {
             0f => GrowDirection.End,
@@ -90,7 +91,8 @@ public partial class HudLayout : Control
             _ => GrowDirection.Both,
         };
         slot.GrowVertical = vertical == 1f ? GrowDirection.Begin : GrowDirection.End;
-        align.AddChild(slot);
+
+        AddChild(slot);
         return slot;
     }
 }
